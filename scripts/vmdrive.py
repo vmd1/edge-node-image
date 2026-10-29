@@ -67,11 +67,18 @@ class VM:
     def send(self, text):
         self.s.sendall(text.encode())
 
-    def login(self, timeout=180):
-        self.wait_for(r"automatic login", timeout)
-        time.sleep(1)
-        self.send("\n")
-        self.sh("true", timeout=30)
+    def login(self, timeout=240):
+        """Wait until the debug shell answers."""
+        end = time.time() + timeout
+        while time.time() < end:
+            self.send("\necho __UP_$((6*7))__\n")
+            try:
+                self.wait_for(r"__UP_42__", 6)
+                time.sleep(0.5)
+                return
+            except TimeoutError:
+                pass
+        raise TimeoutError("debug shell never answered; tail: %r" % self.buf[-600:])
 
     def sh(self, cmd, timeout=60):
         tag = f"__RC_{int(time.time()*1000)%10**8}_"

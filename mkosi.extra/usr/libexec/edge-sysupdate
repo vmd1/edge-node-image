@@ -7,4 +7,4 @@ mkdir -p /run/edge/sysupdate.d
 for f in /usr/lib/edge/sysupdate.d.in/*.transfer; do
   sed "s|@UPDATE_URL@|$url|g" "$f" > "/run/edge/sysupdate.d/$(basename "$f")"
 done
-exec systemd-sysupdate --definitions=/run/edge/sysupdate.d "$@"
+exec /usr/lib/systemd/systemd-sysupdate --definitions=/run/edge/sysupdate.d "$@"

@@ -4,7 +4,7 @@ ProtectVersion=%A
 [Source]
 Type=url-file
 Path=@UPDATE_URL@
-MatchPattern=%M_@v.efi
+MatchPattern=%M_@v.efi.zst
 
 [Target]
 Type=regular-file

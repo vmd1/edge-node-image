@@ -1,17 +1,27 @@
 #!/bin/sh
 # Boot health gate. The slot is only marked good (systemd-bless-boot) if every check in /usr/lib/edge/health.d passes
-# within the time limit; otherwise boot counting runs out and the bootloader falls back to the previous slot.
+# within the time limit. If it fails while this boot is still on probation (the boot entry carries a +N try counter) the
+# machine reboots, so the counter runs down and the bootloader falls back to the previous slot. A failure on a boot that
+# is already blessed never reboots (a tailnet outage must not cause a reboot loop).
 set -u
 limit="${EDGE_HEALTH_TIMEOUT:-240}"
 [ -r /etc/edge/health.conf ] && . /etc/edge/health.conf
 skip=",${EDGE_HEALTH_SKIP:-},"
 end=$(( $(date +%s) + limit ))
+fail() {
+  echo "health: FAILED $1" >&2
+  if [ -e /sys/firmware/efi/efivars/LoaderBootCountPath-4a67b082-0a4c-41cf-b6c7-440b29bb8c4f ]; then
+    echo "health: boot is on probation, rebooting so the bootloader can fall back" >&2
+    sleep 5; systemctl --no-block reboot
+  fi
+  exit 1
+}
 for check in /usr/lib/edge/health.d/*; do
   [ -x "$check" ] || continue
   name=$(basename "$check")
   case "$skip" in *",${name#*-},"*) echo "health: skip $name"; continue;; esac
   until "$check"; do
-    if [ "$(date +%s)" -ge "$end" ]; then echo "health: FAILED $name" >&2; exit 1; fi
+    [ "$(date +%s)" -ge "$end" ] && fail "$name"
     sleep 5
   done
   echo "health: ok $name"

@@ -1,0 +1,15 @@
+[Unit]
+Description=Debug root shell on the serial console (debug profile only)
+After=systemd-user-sessions.service
+[Service]
+ExecStart=/bin/bash --noprofile --norc -i
+StandardInput=tty-force
+StandardOutput=tty
+StandardError=tty
+TTYPath=/dev/ttyAMA0
+TTYReset=yes
+Environment=PS1=# TERM=dumb
+Restart=always
+RestartSec=1
+[Install]
+WantedBy=multi-user.target

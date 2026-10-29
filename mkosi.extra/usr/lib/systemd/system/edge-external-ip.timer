@@ -1,0 +1,10 @@
+[Unit]
+Description=Refresh the public IPv4 address periodically
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=30min
+RandomizedDelaySec=2min
+
+[Install]
+WantedBy=timers.target

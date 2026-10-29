@@ -1,0 +1,5 @@
+#!/bin/sh
+# The kubelet reports this node Ready to the cluster.
+r=$(/usr/local/bin/k3s kubectl --kubeconfig /var/lib/rancher/k3s/agent/kubelet.kubeconfig --request-timeout=5s \
+  get node "$(hostname)" -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}' 2>/dev/null) || exit 1
+[ "$r" = "True" ]

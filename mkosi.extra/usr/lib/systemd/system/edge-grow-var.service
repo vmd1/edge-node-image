@@ -7,4 +7,5 @@ Conflicts=shutdown.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/libexec/edge-grow-var
+# '-': a failed grow must not stop /var from mounting; the node still works with the original size.
+ExecStart=-/usr/libexec/edge-grow-var

@@ -1,0 +1,56 @@
+#!/bin/bash
+# Runs on every boot, idempotent. Turns instance metadata (or a pre-seeded /var/lib/edge/bootstrap.env) into the node's
+# runtime config: node name, Tailscale login, noded allowlist, k3s join settings. Secrets live only under /var (0600).
+set -euo pipefail
+V=/var/lib/edge; R=/run/edge
+install -d -m 0755 "$V" "$R"
+env_file="$V/bootstrap.env"
+
+if [ ! -s "$env_file" ]; then
+  echo "firstboot: no $env_file, reading OCI instance metadata"
+  imds=""
+  for i in $(seq 1 30); do
+    imds=$(curl -sf --max-time 5 -H "Authorization: Bearer Oracle" http://169.254.169.254/opc/v2/instance/ || true)
+    [ -n "$imds" ] && break
+    sleep 2
+  done
+  [ -n "$imds" ] || { echo "firstboot: no metadata and no bootstrap.env; nothing to configure" >&2; exit 1; }
+  umask 077
+  {
+    echo "NODE_NAME=$(printf '%s' "$imds" | jq -r '.displayName')"
+    printf '%s' "$imds" | jq -r '.metadata // {} | to_entries[] | select(.key|test("^[a-z0-9_]+$")) | "\(.key|ascii_upcase)=\(.value|@sh)"'
+  } > "$env_file.tmp"
+  mv "$env_file.tmp" "$env_file"
+fi
+
+set -a; . "$env_file"; set +a
+umask 077
+: "${NODE_NAME:?NODE_NAME missing from bootstrap}"
+printf '%s' "$NODE_NAME" | grep -Eq '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$' || { echo "firstboot: invalid node name" >&2; exit 1; }
+hostname "$NODE_NAME"
+
+# noded allowlist (empty = nobody)
+jq -n --arg users "${NODED_ALLOW_USERS:-}" --arg tags "${NODED_ALLOW_TAGS:-}" \
+  '{allow_users: ($users|split(",")|map(select(.!=""))), allow_tags: ($tags|split(",")|map(select(.!="")))}' > "$V/noded.json"
+chmod 0644 "$V/noded.json"
+
+# join token for k3s
+if [ -n "${K3S_TOKEN:-}" ]; then printf '%s\n' "$K3S_TOKEN" > "$V/k3s-token"; chmod 0600 "$V/k3s-token"; fi
+
+# registry mirror default (nodectl registry can change it later)
+[ -e "$V/registries.yaml" ] || printf 'mirrors:\n  docker.io:\n    endpoint:\n      - "https://mirror.gcr.io"\n      - "https://registry-1.docker.io"\n' > "$V/registries.yaml"
+
+# Tailscale: join once. The auth key is removed from disk afterwards.
+if [ "${EDGE_SKIP_TAILSCALE:-}" != 1 ]; then
+  for i in $(seq 1 30); do tailscale status >/dev/null 2>&1 && break || [ $? -eq 1 ] && break; sleep 1; done
+  if ! tailscale ip -4 >/dev/null 2>&1; then
+    [ -n "${TAILSCALE_AUTHKEY:-}" ] || { echo "firstboot: not on the tailnet and no TAILSCALE_AUTHKEY" >&2; exit 1; }
+    tailscale up --authkey="$TAILSCALE_AUTHKEY" --hostname="$NODE_NAME" --accept-dns=false --accept-routes=false
+  fi
+  tailscale set --auto-update=false --accept-dns=false
+  if grep -q '^TAILSCALE_AUTHKEY=' "$env_file"; then sed -i.bak '/^TAILSCALE_AUTHKEY=/d' "$env_file" && rm -f "$env_file.bak"; fi
+fi
+
+/usr/libexec/edge-external-ip --no-restart || echo "firstboot: external ip lookup failed, using last known value if any" >&2
+/usr/libexec/edge-render-k3s
+echo "firstboot: done for $NODE_NAME"

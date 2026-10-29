@@ -1,0 +1,14 @@
+[Unit]
+Description=Publish the image version as a node annotation
+After=k3s-agent.service
+Wants=k3s-agent.service
+ConditionPathExists=/var/lib/edge/k3s-config.yaml
+
+[Service]
+Type=oneshot
+Restart=on-failure
+RestartSec=30
+ExecStart=/usr/libexec/edge-node-annotate
+
+[Install]
+WantedBy=multi-user.target

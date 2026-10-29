@@ -1,0 +1,7 @@
+#!/bin/sh
+# Point k3s at the baked airgap images (read-only, in the image) and at the registry config kept on /var.
+set -eu
+d=/var/lib/rancher/k3s/agent/images
+mkdir -p "$d"
+for f in /usr/lib/edge/images/*.tar*; do [ -e "$f" ] && ln -sf "$f" "$d/$(basename "$f")"; done
+exit 0

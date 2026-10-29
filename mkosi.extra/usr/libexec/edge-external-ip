@@ -1,0 +1,52 @@
+#!/bin/bash
+# Poll ip.me for this node's public IPv4. A change is accepted only if two reads agree and the address is globally
+# routable. The value goes to /run/edge/external-ip and /var/lib/edge/external-ip (last known). If it changed, the k3s
+# config is re-rendered and k3s-agent restarted once (at most every EDGE_IP_RESTART_COOLDOWN seconds).
+set -euo pipefail
+V=/var/lib/edge; R=/run/edge
+install -d -m 0755 "$V" "$R"
+norestart=0; [ "${1:-}" = "--no-restart" ] && norestart=1
+url="${EDGE_IP_URL:-https://ip.me}"
+
+valid() { # globally routable IPv4 only
+  local ip="$1" a b c d
+  [[ "$ip" =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$ ]] || return 1
+  a=${BASH_REMATCH[1]}; b=${BASH_REMATCH[2]}; c=${BASH_REMATCH[3]}; d=${BASH_REMATCH[4]}
+  for o in $a $b $c $d; do [ "$o" -le 255 ] || return 1; done
+  [ "$a" -eq 0 ] || [ "$a" -eq 10 ] || [ "$a" -eq 127 ] || [ "$a" -ge 224 ] && return 1
+  [ "$a" -eq 100 ] && [ "$b" -ge 64 ] && [ "$b" -le 127 ] && return 1        # CGNAT / Tailscale
+  [ "$a" -eq 169 ] && [ "$b" -eq 254 ] && return 1
+  [ "$a" -eq 172 ] && [ "$b" -ge 16 ] && [ "$b" -le 31 ] && return 1
+  [ "$a" -eq 192 ] && [ "$b" -eq 168 ] && return 1
+  [ "$a" -eq 192 ] && [ "$b" -eq 0 ] && [ "$c" -eq 0 ] && return 1
+  [ "$a" -eq 198 ] && { [ "$b" -eq 18 ] || [ "$b" -eq 19 ]; } && return 1
+  return 0
+}
+read_ip() { curl -4 -fsS --max-time 8 "$url" 2>/dev/null | tr -d ' \r\n' || true; }
+
+new=""
+for attempt in 1 2 3; do
+  a=$(read_ip); sleep "${EDGE_IP_GAP:-3}"; b=$(read_ip)
+  if [ -n "$a" ] && [ "$a" = "$b" ] && valid "$a"; then new="$a"; break; fi
+  echo "external-ip: attempt $attempt gave '$a' / '$b', not accepted" >&2
+done
+
+prev=$(cat "$V/external-ip" 2>/dev/null || true)
+if [ -z "$new" ]; then
+  [ -n "$prev" ] && { echo "$prev" > "$R/external-ip"; echo "external-ip: lookup failed, keeping $prev" >&2; exit 0; }
+  echo "external-ip: lookup failed and no previous value" >&2; exit 1
+fi
+echo "$new" > "$R/external-ip"
+[ "$new" = "$prev" ] && exit 0
+echo "$new" > "$V/external-ip"
+echo "external-ip: ${prev:-none} -> $new"
+[ "$norestart" = 1 ] && exit 0
+/usr/libexec/edge-render-k3s
+if systemctl is-active --quiet k3s-agent.service; then
+  last=$(stat -c %Y "$R/k3s-restarted" 2>/dev/null || echo 0)
+  if [ $(( $(date +%s) - last )) -ge "${EDGE_IP_RESTART_COOLDOWN:-3600}" ]; then
+    : > "$R/k3s-restarted"; systemctl restart k3s-agent.service
+  else
+    echo "external-ip: changed again within the cooldown, will apply on the next run" >&2
+  fi
+fi

@@ -1,0 +1,6 @@
+#!/bin/sh
+# node.vmd1.dev/image-version=<IMAGE_VERSION> on this node, using the kubelet's own credentials.
+set -eu
+. /etc/os-release
+exec /usr/local/bin/k3s kubectl --kubeconfig /var/lib/rancher/k3s/agent/kubelet.kubeconfig --request-timeout=15s \
+  annotate node "$(hostname)" "node.vmd1.dev/image-version=${IMAGE_VERSION}" --overwrite

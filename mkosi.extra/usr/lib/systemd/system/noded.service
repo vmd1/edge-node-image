@@ -1,0 +1,25 @@
+[Unit]
+Description=Node agent (typed gRPC API on the Tailscale address)
+After=tailscaled.service edge-firstboot.service
+Wants=tailscaled.service
+
+[Service]
+ExecStart=/usr/bin/noded
+Restart=always
+RestartSec=3
+# Runs as root because it stages updates (partitions), sets boot entries and reboots; the API is typed (no exec RPC) and
+# the process is sandboxed as far as those jobs allow.
+NoNewPrivileges=yes
+ProtectHome=yes
+PrivateTmp=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=no
+ProtectControlGroups=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RestrictRealtime=yes
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target

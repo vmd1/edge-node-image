@@ -10,6 +10,7 @@ cd "$(dirname "$0")/.."
 docker image inspect edge-mkosi >/dev/null 2>&1 || docker build -q -t edge-mkosi -f scripts/Dockerfile.mkosi scripts
 out="${EDGE_OUT:-mkosi.output}"
 mkdir -p "$out" mkosi.cache
+[ -n "${EDGE_SKIP_TREE:-}" ] || EDGE_DEBUG_BUILD="${EDGE_PROFILE:+1}" scripts/prepare-tree.sh "${EDGE_ARCH:-}"
 docker run --rm --privileged -v "$PWD":/work -w /work \
   -e EDGE_PROFILE="${EDGE_PROFILE:-}" -e EDGE_VERSION="${EDGE_VERSION:-1.0.0}" -e OUT="$out" \
   edge-mkosi bash -euxc '

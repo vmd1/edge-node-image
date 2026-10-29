@@ -1,0 +1,16 @@
+[Unit]
+Description=Configure this node from instance metadata (hostname, Tailscale, k3s settings)
+After=network-online.target tailscaled.service var.mount
+Wants=network-online.target
+Requires=var.mount tailscaled.service
+Before=noded.service k3s-agent.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Restart=on-failure
+RestartSec=20
+ExecStart=/usr/libexec/edge-firstboot
+
+[Install]
+WantedBy=multi-user.target

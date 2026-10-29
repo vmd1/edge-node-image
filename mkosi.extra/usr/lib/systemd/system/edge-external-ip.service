@@ -1,0 +1,8 @@
+[Unit]
+Description=Refresh this node's public IPv4 address (ip.me)
+After=network-online.target edge-firstboot.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/edge-external-ip

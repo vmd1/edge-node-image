@@ -1,0 +1,23 @@
+[Unit]
+Description=k3s agent
+After=network-online.target tailscaled.service edge-firstboot.service
+Wants=network-online.target
+PartOf=tailscaled.service
+ConditionPathExists=/var/lib/edge/k3s-config.yaml
+
+[Service]
+Type=notify
+KillMode=process
+Delegate=yes
+LimitNOFILE=1048576
+LimitNPROC=infinity
+LimitCORE=infinity
+TasksMax=infinity
+TimeoutStartSec=0
+Restart=always
+RestartSec=5s
+ExecStartPre=/usr/libexec/edge-k3s-prep
+ExecStart=/usr/local/bin/k3s agent --config /var/lib/edge/k3s-config.yaml
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,39 @@
+#!/bin/bash
+# Write /var/lib/edge/k3s-config.yaml from the bootstrap settings. Refuses (no file, so k3s-agent does not start) if the
+# node has no external IP yet, as agreed in the plan.
+set -euo pipefail
+V=/var/lib/edge
+set -a; . "$V/bootstrap.env"; set +a
+ext=$(cat "$V/external-ip" 2>/dev/null || true)
+[ -n "$ext" ] || { echo "render-k3s: no external IP yet, not writing a k3s config" >&2; rm -f "$V/k3s-config.yaml"; exit 1; }
+
+server="${K3S_SERVER_URL:-}"
+if [ -z "$server" ] && [ -n "${K3S_SERVER_PEER:-}" ]; then
+  ip=$(tailscale ip -4 "$K3S_SERVER_PEER" 2>/dev/null | head -1 || true)
+  [ -n "$ip" ] && server="https://$ip:${K3S_SERVER_PORT:-6443}"
+fi
+[ -n "$server" ] || { echo "render-k3s: no K3S_SERVER_URL and the peer did not resolve" >&2; rm -f "$V/k3s-config.yaml"; exit 1; }
+nodeip="${NODE_IP:-$(tailscale ip -4 2>/dev/null | head -1 || true)}"
+[ -n "$nodeip" ] || { echo "render-k3s: no node IP (is tailscale up?)" >&2; rm -f "$V/k3s-config.yaml"; exit 1; }
+
+umask 077
+cat > "$V/k3s-config.yaml.tmp" <<YAML
+server: "$server"
+token-file: $V/k3s-token
+node-name: "$NODE_NAME"
+node-ip: "$nodeip"
+node-external-ip: "$ext"
+flannel-iface: tailscale0
+node-label:
+  - "node-type=${NODE_TYPE:-ingress}"
+node-taint:
+  - "${NODE_TAINT:-node-role=ingress:NoSchedule}"
+kubelet-arg:
+  - "fail-swap-on=false"
+  - "eviction-hard=memory.available<100Mi,nodefs.available<10%,imagefs.available<10%"
+  - "system-reserved=memory=100Mi"
+  - "kube-reserved=memory=100Mi"
+YAML
+if [ "${K3S_DISABLE_NETWORK_POLICY:-}" = "true" ]; then echo 'disable-network-policy: true' >> "$V/k3s-config.yaml.tmp"; fi
+mv "$V/k3s-config.yaml.tmp" "$V/k3s-config.yaml"
+echo "render-k3s: wrote $V/k3s-config.yaml (server $server, node-ip $nodeip, external-ip $ext)"

@@ -30,7 +30,7 @@ try:
     vm.login()
     vm.sh("stty -echo")   # the key must not be echoed to the console log
     vm.sh("mkdir -p /var/lib/edge && umask 077 && cat > /var/lib/edge/bootstrap.env <<'EOF'\n"
-          f"NODE_NAME={NAME}\nTAILSCALE_AUTHKEY={key}\nK3S_TOKEN=unused\nK3S_SERVER_URL=https://10.0.2.2:6443\nEOF")
+          f"NODE_NAME={NAME}\nTAILSCALE_AUTHKEY={key}\nK3S_TOKEN=unused\nK3S_SERVER_URL=https://10.0.2.2:6443\nEOF\ntrue")
     vm.sh("stty echo")
     rc, out = vm.sh("systemctl restart edge-firstboot; echo fb=$?; journalctl -u edge-firstboot --no-pager -n 8 | cut -c1-200 | sed 's/tskey-[A-Za-z0-9-]*/<key>/g'", timeout=240)
     print(out)

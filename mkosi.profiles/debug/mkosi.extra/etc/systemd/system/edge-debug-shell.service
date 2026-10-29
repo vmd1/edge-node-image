@@ -2,7 +2,7 @@
 Description=Debug root shell on the serial console (debug profile only)
 After=systemd-user-sessions.service
 [Service]
-ExecStart=/bin/bash --noprofile --norc -i
+ExecStart=/bin/bash --noprofile --norc --noediting -i
 StandardInput=tty-force
 StandardOutput=tty
 StandardError=tty

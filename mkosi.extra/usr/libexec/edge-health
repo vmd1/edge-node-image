@@ -1,0 +1,18 @@
+#!/bin/sh
+# Boot health gate. The slot is only marked good (systemd-bless-boot) if every check in /usr/lib/edge/health.d passes
+# within the time limit; otherwise boot counting runs out and the bootloader falls back to the previous slot.
+set -u
+limit="${EDGE_HEALTH_TIMEOUT:-240}"
+[ -r /etc/edge/health.conf ] && . /etc/edge/health.conf
+skip=",${EDGE_HEALTH_SKIP:-},"
+end=$(( $(date +%s) + limit ))
+for check in /usr/lib/edge/health.d/*; do
+  [ -x "$check" ] || continue
+  name=$(basename "$check")
+  case "$skip" in *",${name#*-},"*) echo "health: skip $name"; continue;; esac
+  until "$check"; do
+    if [ "$(date +%s)" -ge "$end" ]; then echo "health: FAILED $name" >&2; exit 1; fi
+    sleep 5
+  done
+  echo "health: ok $name"
+done

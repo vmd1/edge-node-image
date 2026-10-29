@@ -1,0 +1,10 @@
+#!/bin/sh
+# systemd-sysupdate with the transfer definitions rendered for this node's update URL.
+# The URL is /var/lib/edge/update-url if present (nodectl can change it, e.g. to pin a channel), else the baked default.
+set -eu
+url=$(cat /var/lib/edge/update-url 2>/dev/null || cat /usr/lib/edge/update-url)
+mkdir -p /run/edge/sysupdate.d
+for f in /usr/lib/edge/sysupdate.d.in/*.transfer; do
+  sed "s|@UPDATE_URL@|$url|g" "$f" > "/run/edge/sysupdate.d/$(basename "$f")"
+done
+exec systemd-sysupdate --definitions=/run/edge/sysupdate.d "$@"

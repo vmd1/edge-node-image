@@ -8,3 +8,6 @@ mkosi.workspace/
 *.img
 # local VM state
 .vm/
+mkosi.cache/
+build/
+mkosi.profiles/debug/mkosi.extra/usr/lib/systemd/import-pubring.pgp

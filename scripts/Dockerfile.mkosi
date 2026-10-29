@@ -1,0 +1,8 @@
+# Build environment for mkosi (it does not run on macOS). Built once, then reused.
+FROM debian:trixie
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update -qq && apt-get install -y -qq --no-install-recommends \
+      mkosi debian-archive-keyring apt dpkg bubblewrap systemd-boot-efi systemd-ukify systemd-repart \
+      dosfstools mtools e2fsprogs squashfs-tools zstd xz-utils ca-certificates python3 kmod fdisk \
+      cryptsetup-bin gnupg curl openssh-client jq \
+    && rm -rf /var/lib/apt/lists/*

@@ -1,0 +1,7 @@
+#!/bin/sh
+# Grow the /var partition to the end of the disk before it is mounted (the filesystem is grown by x-systemd.growfs).
+set -eu
+udevadm settle --timeout=30 || true
+dev=$(readlink -f /dev/disk/by-partlabel/var) || { echo "no var partition" >&2; exit 0; }
+disk="/dev/$(lsblk -no PKNAME "$dev")"
+exec systemd-repart --dry-run=no --definitions=/usr/lib/repart.d --no-pager "$disk"

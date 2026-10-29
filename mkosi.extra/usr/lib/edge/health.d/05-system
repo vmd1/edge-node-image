@@ -1,0 +1,3 @@
+#!/bin/sh
+# basic: networkd is up (there is no point blessing an image that cannot get an address)
+systemctl is-active --quiet systemd-networkd

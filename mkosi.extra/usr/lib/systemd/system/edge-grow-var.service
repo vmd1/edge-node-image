@@ -1,0 +1,10 @@
+[Unit]
+Description=Grow the /var partition to the end of the disk
+DefaultDependencies=no
+After=systemd-udevd.service systemd-udev-trigger.service
+Before=var.mount local-fs.target
+Conflicts=shutdown.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/edge-grow-var

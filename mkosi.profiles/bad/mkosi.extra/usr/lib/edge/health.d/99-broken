@@ -1,0 +1,3 @@
+#!/bin/sh
+echo "deliberately failing health check (bad profile)" >&2
+exit 1

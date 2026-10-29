@@ -1,0 +1,10 @@
+# mkosi output and caches
+mkosi.output/
+mkosi.cache/
+mkosi.builddir/
+mkosi.workspace/
+*.raw
+*.qcow2
+*.img
+# local VM state
+.vm/

@@ -1,0 +1,3 @@
+# Root is mounted read-only from the kernel command line. /var is found by label, not by the GPT var-partition
+# UUID rule (which only matches when the partition UUID is derived from the machine id).
+LABEL=var  /var  ext4  defaults,x-systemd.growfs  0  2

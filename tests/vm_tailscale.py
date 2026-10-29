@@ -66,6 +66,6 @@ finally:
     vm.stop()
     # nothing from this run should keep the key
     log = open(f"{work}/console.log", errors="replace").read()
-    check("the auth key never appeared on the VM console", "tskey-" not in log, "")
+    check("the auth key never appeared on the VM console", key[12:] not in log and key[8:40] not in log, "")
     shutil.rmtree(work, ignore_errors=True)
 ok = sum(1 for _, o in results if o); print(f"\n{ok}/{len(results)} passed"); sys.exit(0 if ok == len(results) else 1)

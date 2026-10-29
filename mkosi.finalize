@@ -1,0 +1,39 @@
+#!/bin/bash
+# Trim the kernel module tree to what an edge node (a VM running k3s + tailscale) can use. Nothing here is loaded at boot on
+# the nodes (wifi, sound, GPU, USB, HID, media, exotic filesystems); removing the files also stops udev auto-loading them, and
+# shrinks the root partition and the A/B download. depmod is re-run so modules.dep matches.
+# Modules the trial node actually loaded (131 on zeus-01) are checked by scripts/check-image.sh.
+set -euo pipefail
+[ "${1:-}" = finalize ] || [ -n "${BUILDROOT:-}" ] || exit 0
+cd "$BUILDROOT/usr/lib/modules"
+for kdir in */; do
+  kdir=${kdir%/}; k="$kdir/kernel"
+  [ -d "$k" ] || continue
+  before=$(du -sm "$k" | cut -f1)
+  rm -rf "$k/sound" "$k/arch/x86/kvm"
+  for d in media gpu video infiniband iio hid usb input comedi staging mtd bluetooth nfc firewire thunderbolt pcmcia isdn \
+           hwmon leds regulator mmc memstick gnss w1 pinctrl i2c/busses iommu mfd phy rtc ptp pps misc/eeprom accessibility \
+           parport pnp dca extcon fpga hv uio gpio spi spmi mailbox soundwire vfio; do
+    rm -rf "$k/drivers/$d"
+  done
+  for d in wireless bluetooth can nfc 6lowpan ieee802154 appletalk x25 ax25 rds tipc sctp dccp atm mac80211 mac802154 wimax \
+           openvswitch batman-adv smc l2tp hsr nsh lapb phonet caif rfkill ceph; do
+    rm -rf "$k/net/$d"
+  done
+  rm -rf "$k/drivers/net/wireless" "$k/drivers/net/can" "$k/drivers/net/wan" "$k/drivers/net/usb" "$k/drivers/net/hyperv" \
+         "$k/drivers/net/phy" "$k/drivers/net/mdio" "$k/drivers/net/ieee802154" "$k/drivers/net/arcnet" "$k/drivers/net/fddi"
+  if [ -d "$k/drivers/net/ethernet" ]; then
+    find "$k/drivers/net/ethernet" -mindepth 1 -maxdepth 1 ! -name intel ! -name amazon ! -name realtek ! -name broadcom \
+      -exec rm -rf {} +
+  fi
+  if [ -d "$k/fs" ]; then
+    find "$k/fs" -mindepth 1 -maxdepth 1 \
+      ! -name 'ext4' ! -name 'jbd2' ! -name 'mbcache.ko*' ! -name 'fat' ! -name 'overlayfs' ! -name 'fuse' ! -name 'squashfs' \
+      ! -name 'erofs' ! -name 'nfs' ! -name 'nfs_common' ! -name 'lockd' ! -name 'nls' ! -name 'netfs' ! -name 'fscache' \
+      ! -name 'efivarfs' ! -name 'configfs' ! -name 'pstore' ! -name 'autofs' ! -name 'exportfs' ! -name 'quota' \
+      ! -name 'binfmt_misc.ko*' ! -name 'cachefiles' ! -name 'nfsd' \
+      -exec rm -rf {} +
+  fi
+  mkosi-chroot depmod -a "$kdir"
+  echo "modules $kdir: ${before}M -> $(du -sm "$k" | cut -f1)M, $(find "$k" -name '*.ko*' | wc -l) files"
+done

@@ -6,6 +6,7 @@ PartOf=tailscaled.service
 ConditionPathExists=/var/lib/edge/k3s-config.yaml
 
 [Service]
+Environment=GOGC=40
 Type=notify
 KillMode=process
 Delegate=yes

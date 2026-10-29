@@ -4,6 +4,7 @@ After=tailscaled.service edge-firstboot.service
 Wants=tailscaled.service
 
 [Service]
+Environment=GOGC=50 GOMEMLIMIT=16MiB
 ExecStart=/usr/bin/noded
 Restart=always
 RestartSec=3

@@ -4,6 +4,8 @@ After=network-pre.target
 Wants=network-pre.target
 
 [Service]
+# the Go runtime otherwise lets the heap grow to twice the live size; keep it small on a 1 GB node
+Environment=GOGC=50 GOMEMLIMIT=40MiB TS_NO_LOGS_NO_SUPPORT=true
 ExecStart=/usr/local/bin/tailscaled --state=/var/lib/tailscale/tailscaled.state --socket=/run/tailscale/tailscaled.sock --port=41641
 Restart=on-failure
 RuntimeDirectory=tailscale

@@ -198,6 +198,7 @@ func TestStageUpdate(t *testing.T) {
 		t.Fatalf("nothing may run for refused input: %v", r.calls)
 	}
 	r.out["/usr/libexec/edge-sysupdate"] = "✓ Successfully installed update '2.0.0'.\n"
+	r.out["bootctl list"] = "         id: edge-node_1.0.0.efi\n         id: edge-node_2.0.0+3-0.efi\n"
 	resp, err := s.StageUpdate(context.Background(), &pb.StageUpdateRequest{})
 	if err != nil || resp.StagedVersion != "2.0.0" {
 		t.Fatalf("%v %v", resp, err)
@@ -215,6 +216,21 @@ func TestStageUpdate(t *testing.T) {
 	r.fail["/usr/libexec/edge-sysupdate"] = true
 	if _, err := s.StageUpdate(context.Background(), &pb.StageUpdateRequest{}); status.Code(err) != codes.Internal {
 		t.Errorf("failure must surface: %v", err)
+	}
+}
+
+func TestStageRefusesAnEntryTheBootloaderCannotUse(t *testing.T) {
+	s, r, _ := fixture(t)
+	r.out["/usr/libexec/edge-sysupdate"] = "✓ Successfully installed update '2.0.0'.\n"
+	// the real failure: the file is on the ESP but unparsable, so bootctl lists only the old entry
+	r.out["bootctl list"] = "Failed to parse PE file '/boot/EFI/Linux/edge-node_2.0.0+3-0.efi': Bad message\n         id: edge-node_1.0.0.efi\n"
+	if _, err := s.StageUpdate(context.Background(), &pb.StageUpdateRequest{}); status.Code(err) != codes.FailedPrecondition {
+		t.Fatalf("an unusable staged entry must be refused: %v", err)
+	}
+	// a listed entry for a different version is not good enough
+	r.out["bootctl list"] = "         id: edge-node_2.0.0x.efi\n"
+	if _, err := s.StageUpdate(context.Background(), &pb.StageUpdateRequest{TargetVersion: "2.0.0"}); status.Code(err) != codes.FailedPrecondition {
+		t.Fatalf("a look-alike entry must not satisfy the check: %v", err)
 	}
 }
 

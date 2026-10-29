@@ -23,7 +23,7 @@ token-file: $V/k3s-token
 node-name: "$NODE_NAME"
 node-ip: "$nodeip"
 node-external-ip: "$ext"
-flannel-iface: tailscale0
+flannel-iface: ${FLANNEL_IFACE:-tailscale0}
 node-label:
   - "node-type=${NODE_TYPE:-ingress}"
 node-taint:

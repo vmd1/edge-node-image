@@ -259,6 +259,14 @@ func (s *Server) StageUpdate(ctx context.Context, req *pb.StageUpdateRequest) (*
 			staged = m[1]
 		}
 	}
+	// sysupdate can report success for a file the bootloader cannot use (it once wrote a still-compressed UKI), so check that the
+	// bootloader sees a boot entry for the staged version before telling the caller it is ready.
+	if staged != "" {
+		bl, _ := s.R.Run(ctx, "bootctl", "list", "--no-pager")
+		if !regexp.MustCompile(`id: edge-node_`+regexp.QuoteMeta(staged)+`(\+[0-9]+(-[0-9]+)?)?\.efi`).MatchString(bl) || strings.Contains(bl, "Failed to parse") {
+			return nil, status.Errorf(codes.FailedPrecondition, "version %s was written but the bootloader does not list a usable boot entry for it; not safe to reboot into\n%s", staged, bl)
+		}
+	}
 	return &pb.StageUpdateResponse{StagedVersion: staged, Output: out}, nil
 }
 

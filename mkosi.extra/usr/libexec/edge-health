@@ -6,6 +6,7 @@
 set -u
 limit="${EDGE_HEALTH_TIMEOUT:-240}"
 [ -r /etc/edge/health.conf ] && . /etc/edge/health.conf
+[ -r /var/lib/edge/health.conf ] && . /var/lib/edge/health.conf   # local override (tests, break-glass)
 skip=",${EDGE_HEALTH_SKIP:-},"
 end=$(( $(date +%s) + limit ))
 fail() {

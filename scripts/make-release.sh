@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Turn a mkosi build (with SplitArtifacts=uki,partitions) into a sysupdate release directory:
-#   edge-node_<ver>_<uuid>.root.raw.zst, edge-node_<ver>_<uuid>.root-verity.raw.zst, edge-node_<ver>.efi.zst,
+#   edge-node_<ver>_<uuid>.root.raw.zst, edge-node_<ver>_<uuid>.root-verity.raw.zst, edge-node_<ver>.efi,
 #   SHA256SUMS and SHA256SUMS.gpg (detached signature).
 # The two partition UUIDs are derived from the root hash exactly as systemd expects (first and last 128 bits).
 #
@@ -19,6 +19,7 @@ ru=$(uuid "${hash:0:32}"); vu=$(uuid "${hash:32:32}")
 mkdir -p "$rel"; rm -f "$rel"/*
 zstd -q -T0 -10 -o "$rel/${id}_${ver}_${ru}.root.raw.zst" "$root"
 zstd -q -T0 -10 -o "$rel/${id}_${ver}_${vu}.root-verity.raw.zst" "$verity"
-zstd -q -T0 -10 -o "$rel/${id}_${ver}.efi.zst" "$uki"
-(cd "$rel" && shasum -a 256 -b -- *.zst | sed 's/ \*/  /' > SHA256SUMS && gpg --batch --yes --detach-sign -u "$key" -o SHA256SUMS.gpg SHA256SUMS)
+# the UKI is published uncompressed: sysupdate does not decompress regular-file targets (it wrote the .zst bytes as the UKI)
+cp "$uki" "$rel/${id}_${ver}.efi"
+(cd "$rel" && shasum -a 256 -b -- *.zst *.efi | sed 's/ \*/  /' > SHA256SUMS && gpg --batch --yes --detach-sign -u "$key" -o SHA256SUMS.gpg SHA256SUMS)
 echo "release $ver: root uuid $ru, verity uuid $vu"; ls -la "$rel"

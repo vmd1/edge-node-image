@@ -29,11 +29,6 @@ umask 077
 printf '%s' "$NODE_NAME" | grep -Eq '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$' || { echo "firstboot: invalid node name" >&2; exit 1; }
 hostname "$NODE_NAME"
 
-# noded allowlist (empty = nobody)
-jq -n --arg users "${NODED_ALLOW_USERS:-}" --arg tags "${NODED_ALLOW_TAGS:-}" \
-  '{allow_users: ($users|split(",")|map(select(.!=""))), allow_tags: ($tags|split(",")|map(select(.!="")))}' > "$V/noded.json"
-chmod 0644 "$V/noded.json"
-
 # join token for k3s
 if [ -n "${K3S_TOKEN:-}" ]; then printf '%s\n' "$K3S_TOKEN" > "$V/k3s-token"; chmod 0600 "$V/k3s-token"; fi
 

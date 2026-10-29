@@ -39,17 +39,17 @@ try:
     vm.login()
     vm.sh("mkdir -p /var/lib/edge && cat > /var/lib/edge/bootstrap.env <<'EOF'\n"
           "NODE_NAME=edge-test-01\nK3S_TOKEN=testtoken\nK3S_SERVER_URL=https://10.0.2.2:6443\nEDGE_SKIP_TAILSCALE=1\n"
-          "NODE_IP=10.0.2.15\nFLANNEL_IFACE=eth0\nNODED_ALLOW_USERS=admin@example.com\nEOF\n"
+          "NODE_IP=10.0.2.15\nFLANNEL_IFACE=eth0\nEOF\n"
           "echo EDGE_HEALTH_SKIP=tailscaled > /var/lib/edge/health.conf")
     rc, out = vm.sh("systemctl restart edge-firstboot; echo rc=$?; journalctl -u edge-firstboot --no-pager -n 12 | cut -c1-200", timeout=240)
     print(out)
     check("edge-firstboot completes", "firstboot: done for edge-test-01" in out, out[-400:])
-    rc, out = vm.sh("hostname; cat /var/lib/edge/external-ip; cat /var/lib/edge/noded.json; ls -la /var/lib/edge/k3s-token | cut -c1-12; cat /var/lib/edge/k3s-config.yaml")
+    rc, out = vm.sh("hostname; cat /var/lib/edge/external-ip; ls -la /var/lib/edge/k3s-token | cut -c1-12; cat /var/lib/edge/k3s-config.yaml")
     print(out)
     ip = re.search(r"^\d+\.\d+\.\d+\.\d+$", out, re.M)
     check("hostname set from NODE_NAME", out.splitlines()[0] == "edge-test-01", out)
     check("external IP from ip.me is a public IPv4", bool(ip), out)
-    check("noded allowlist written", '"admin@example.com"' in out, out)
+    check("no noded allowlist file is written (access is decided by the Tailscale ACLs)", "allow_users" not in out, out)
     check("token file is 0600", "-rw-------" in out, out)
     check("k3s config has taint, label, external ip, eth0 flannel, swap-tolerant kubelet",
           all(x in out for x in ["node-role=ingress:NoSchedule", "node-type=ingress", "node-external-ip", "flannel-iface: eth0", "fail-swap-on=false"]), out)

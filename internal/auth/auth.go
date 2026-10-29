@@ -1,16 +1,16 @@
-// Package auth decides which peers may call noded. Release builds only ever use the Tailscale authorizer, which asks
-// tailscaled who the peer is (WhoIs) and checks the answer against an allowlist. The default allowlist is empty, so a
-// node with no configuration refuses everyone.
+// Package auth decides which peers may call noded.
+//
+// There is no identity or allowlist: who may reach noded is decided by the Tailscale ACLs (noded only listens on the node's
+// Tailscale address). The one check done here is about where the connection comes from: it must arrive from another address
+// in the tailnet range. Connections from pods (cluster addresses), from loopback, and from the node itself (host-network pods
+// and any local process connecting to the node's own Tailscale address) are refused, so a compromised workload on the node
+// cannot use the ACL-open port.
 package auth
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"net"
-	"net/http"
-	"os"
-	"strings"
+	"net/netip"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
@@ -22,96 +22,65 @@ type Authorizer interface {
 	Authorize(ctx context.Context) error
 }
 
-// Config is /var/lib/edge/noded.json, written by first boot from instance metadata.
-type Config struct {
-	AllowUsers []string `json:"allow_users"` // Tailscale login names
-	AllowTags  []string `json:"allow_tags"`  // Tailscale ACL tags, e.g. "tag:admin"
+var tailnetRanges = []netip.Prefix{
+	netip.MustParsePrefix("100.64.0.0/10"),       // Tailscale IPv4 (CGNAT range)
+	netip.MustParsePrefix("fd7a:115c:a1e0::/48"), // Tailscale IPv6
 }
 
-func LoadConfig(path string) (Config, error) {
-	var c Config
-	b, err := os.ReadFile(path)
-	if os.IsNotExist(err) {
-		return c, nil // empty allowlist: everyone refused
-	}
+type tailnetOnly struct{ localAddrs func() ([]netip.Addr, error) }
+
+// NewTailnetOnly returns the authorizer described in the package comment.
+func NewTailnetOnly() Authorizer { return &tailnetOnly{localAddrs: interfaceAddrs} }
+
+// NewTailnetOnlyWithLocal is for tests: it takes the node's own addresses explicitly.
+func NewTailnetOnlyWithLocal(local []netip.Addr) Authorizer {
+	return &tailnetOnly{localAddrs: func() ([]netip.Addr, error) { return local, nil }}
+}
+
+func interfaceAddrs() ([]netip.Addr, error) {
+	as, err := net.InterfaceAddrs()
 	if err != nil {
-		return c, err
+		return nil, err
 	}
-	return c, json.Unmarshal(b, &c)
+	var out []netip.Addr
+	for _, a := range as {
+		if ipn, ok := a.(*net.IPNet); ok {
+			if ip, ok := netip.AddrFromSlice(ipn.IP); ok {
+				out = append(out, ip.Unmap())
+			}
+		}
+	}
+	return out, nil
 }
 
-// WhoIs is what we need from tailscaled's local API.
-type WhoIs struct {
-	LoginName string
-	Tags      []string
-}
-
-// Lookup resolves a peer address to its Tailscale identity.
-type Lookup func(ctx context.Context, remote string) (WhoIs, error)
-
-type tailscale struct {
-	cfg    Config
-	lookup Lookup
-}
-
-func NewTailscale(cfg Config, lookup Lookup) Authorizer { return &tailscale{cfg: cfg, lookup: lookup} }
-
-func (t *tailscale) Authorize(ctx context.Context) error {
+func (t *tailnetOnly) Authorize(ctx context.Context) error {
 	p, ok := peer.FromContext(ctx)
 	if !ok || p.Addr == nil {
 		return status.Error(codes.PermissionDenied, "no peer address")
 	}
-	if len(t.cfg.AllowUsers) == 0 && len(t.cfg.AllowTags) == 0 {
-		return status.Error(codes.PermissionDenied, "no callers are allowed on this node")
-	}
-	who, err := t.lookup(ctx, p.Addr.String())
+	ap, err := netip.ParseAddrPort(p.Addr.String())
 	if err != nil {
-		return status.Errorf(codes.PermissionDenied, "cannot identify peer: %v", err)
+		return status.Error(codes.PermissionDenied, "unrecognised peer address")
 	}
-	for _, u := range t.cfg.AllowUsers {
-		if who.LoginName != "" && strings.EqualFold(u, who.LoginName) {
-			return nil
-		}
-	}
-	for _, want := range t.cfg.AllowTags {
-		for _, have := range who.Tags {
-			if want == have {
-				return nil
-			}
+	ip := ap.Addr().Unmap()
+	inTailnet := false
+	for _, r := range tailnetRanges {
+		if r.Contains(ip) {
+			inTailnet = true
+			break
 		}
 	}
-	return status.Error(codes.PermissionDenied, "peer is not on the allowlist")
-}
-
-// LocalAPILookup asks tailscaled over its unix socket.
-func LocalAPILookup(socket string) Lookup {
-	client := &http.Client{Transport: &http.Transport{
-		DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
-			var d net.Dialer
-			return d.DialContext(ctx, "unix", socket)
-		},
-	}}
-	return func(ctx context.Context, remote string) (WhoIs, error) {
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://local-tailscaled.sock/localapi/v0/whois?addr="+remote, nil)
-		if err != nil {
-			return WhoIs{}, err
-		}
-		req.Header.Set("Host", "local-tailscaled.sock")
-		resp, err := client.Do(req)
-		if err != nil {
-			return WhoIs{}, err
-		}
-		defer resp.Body.Close()
-		if resp.StatusCode != http.StatusOK {
-			return WhoIs{}, fmt.Errorf("whois: %s", resp.Status)
-		}
-		var r struct {
-			UserProfile struct{ LoginName string }
-			Node        struct{ Tags []string }
-		}
-		if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
-			return WhoIs{}, err
-		}
-		return WhoIs{LoginName: r.UserProfile.LoginName, Tags: r.Node.Tags}, nil
+	if !inTailnet {
+		return status.Error(codes.PermissionDenied, "callers must come from the tailnet")
 	}
+	local, err := t.localAddrs()
+	if err != nil {
+		return status.Error(codes.PermissionDenied, "cannot determine the node's own addresses")
+	}
+	for _, l := range local {
+		if l == ip {
+			return status.Error(codes.PermissionDenied, "callers on this node are not allowed")
+		}
+	}
+	return nil
 }

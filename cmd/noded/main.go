@@ -23,21 +23,13 @@ import (
 
 func main() {
 	listen := flag.String("listen", "tailscale:7777", `"tailscale:PORT" (bind to this node's Tailscale IPv4 address)`)
-	cfgPath := flag.String("config", "/var/lib/edge/noded.json", "allowlist (JSON); missing means nobody is allowed")
-	sock := flag.String("tailscale-socket", "/var/run/tailscale/tailscaled.sock", "tailscaled local API socket")
+	sock := flag.String("tailscale-socket", "/var/run/tailscale/tailscaled.sock", "tailscaled local API socket (used to learn this node's Tailscale address)")
 	flag.Parse()
 
-	var a auth.Authorizer
+	var a auth.Authorizer = auth.NewTailnetOnly()
 	if d := debugAuthorizer(); d != nil && os.Getenv("NODED_DEBUG_ALLOW_ALL") == "1" {
 		log.Print("WARNING: debug build, authorization is disabled")
 		a = d
-	} else {
-		cfg, err := auth.LoadConfig(*cfgPath)
-		if err != nil {
-			log.Fatalf("config: %v", err)
-		}
-		log.Printf("allowlist: %d users, %d tags", len(cfg.AllowUsers), len(cfg.AllowTags))
-		a = auth.NewTailscale(cfg, auth.LocalAPILookup(*sock))
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)

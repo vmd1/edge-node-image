@@ -2,10 +2,8 @@ package auth
 
 import (
 	"context"
-	"errors"
 	"net"
-	"os"
-	"path/filepath"
+	"net/netip"
 	"testing"
 
 	"google.golang.org/grpc/codes"
@@ -13,81 +11,94 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func ctxFrom(addr string) context.Context {
-	return peer.NewContext(context.Background(), &peer.Peer{Addr: &net.TCPAddr{IP: net.ParseIP(addr), Port: 1234}})
+func from(addr string) context.Context {
+	ap := netip.MustParseAddrPort(addr)
+	return peer.NewContext(context.Background(), &peer.Peer{Addr: net.TCPAddrFromAddrPort(ap)})
 }
 
-func lookup(w WhoIs, err error) Lookup {
-	return func(context.Context, string) (WhoIs, error) { return w, err }
-}
+var self = []netip.Addr{netip.MustParseAddr("100.101.102.103"), netip.MustParseAddr("10.0.2.15"), netip.MustParseAddr("127.0.0.1")}
 
-func TestEmptyConfigRefusesEveryone(t *testing.T) {
-	a := NewTailscale(Config{}, lookup(WhoIs{LoginName: "anyone@example.com", Tags: []string{"tag:admin"}}, nil))
-	if err := a.Authorize(ctxFrom("100.64.0.1")); status.Code(err) != codes.PermissionDenied {
-		t.Fatalf("empty allowlist must deny: %v", err)
-	}
-}
+func denied(err error) bool { return status.Code(err) == codes.PermissionDenied }
 
-func TestAllowUserCaseInsensitive(t *testing.T) {
-	a := NewTailscale(Config{AllowUsers: []string{"Admin@Example.com"}}, lookup(WhoIs{LoginName: "admin@example.com"}, nil))
-	if err := a.Authorize(ctxFrom("100.64.0.1")); err != nil {
-		t.Fatal(err)
+func TestAcceptsOtherTailnetPeers(t *testing.T) {
+	a := NewTailnetOnlyWithLocal(self)
+	for _, addr := range []string{"100.64.0.1:5000", "100.118.170.5:41000", "100.127.255.254:1", "[fd7a:115c:a1e0::1234]:5000"} {
+		if err := a.Authorize(from(addr)); err != nil {
+			t.Errorf("%s should be accepted: %v", addr, err)
+		}
 	}
 }
 
-func TestDenyOtherUser(t *testing.T) {
-	a := NewTailscale(Config{AllowUsers: []string{"admin@example.com"}}, lookup(WhoIs{LoginName: "other@example.com"}, nil))
-	if err := a.Authorize(ctxFrom("100.64.0.1")); status.Code(err) != codes.PermissionDenied {
-		t.Fatalf("%v", err)
+func TestRefusesNonTailnetSources(t *testing.T) {
+	a := NewTailnetOnlyWithLocal(self)
+	for _, addr := range []string{
+		"10.42.0.17:5000",     // a pod
+		"10.0.2.2:5000",       // a private LAN address
+		"192.168.1.10:5000",   // home LAN
+		"127.0.0.1:5000",      // loopback
+		"8.8.8.8:5000",        // the internet
+		"100.63.255.255:5000", // just below the tailnet range
+		"100.128.0.0:5000",    // just above it
+		"[::1]:5000",
+		"[fe80::1]:5000",
+	} {
+		if err := a.Authorize(from(addr)); !denied(err) {
+			t.Errorf("%s must be refused, got %v", addr, err)
+		}
 	}
 }
 
-func TestEmptyLoginNeverMatchesEmptyAllowEntry(t *testing.T) {
-	a := NewTailscale(Config{AllowUsers: []string{""}}, lookup(WhoIs{LoginName: ""}, nil))
-	if err := a.Authorize(ctxFrom("100.64.0.1")); status.Code(err) != codes.PermissionDenied {
-		t.Fatalf("a tagged device with no login must not match an empty allow entry: %v", err)
+func TestRefusesTheNodeItself(t *testing.T) {
+	a := NewTailnetOnlyWithLocal(self)
+	// a host-network pod or local process connecting to the node's own Tailscale address arrives from that same address
+	if err := a.Authorize(from("100.101.102.103:44444")); !denied(err) {
+		t.Fatalf("the node's own Tailscale address must be refused: %v", err)
 	}
 }
 
-func TestAllowTag(t *testing.T) {
-	a := NewTailscale(Config{AllowTags: []string{"tag:admin"}}, lookup(WhoIs{Tags: []string{"tag:k3s", "tag:admin"}}, nil))
-	if err := a.Authorize(ctxFrom("100.64.0.1")); err != nil {
-		t.Fatal(err)
+func TestIPv4MappedIPv6IsHandled(t *testing.T) {
+	a := NewTailnetOnlyWithLocal(self)
+	if err := a.Authorize(from("[::ffff:100.64.0.9]:5000")); err != nil {
+		t.Errorf("a mapped tailnet address is a tailnet address: %v", err)
 	}
-	b := NewTailscale(Config{AllowTags: []string{"tag:admin"}}, lookup(WhoIs{Tags: []string{"tag:k3s"}}, nil))
-	if err := b.Authorize(ctxFrom("100.64.0.1")); status.Code(err) != codes.PermissionDenied {
-		t.Fatalf("%v", err)
+	if err := a.Authorize(from("[::ffff:10.42.0.9]:5000")); !denied(err) {
+		t.Errorf("a mapped pod address must be refused: %v", err)
 	}
-}
-
-func TestLookupFailureDenies(t *testing.T) {
-	a := NewTailscale(Config{AllowUsers: []string{"admin@example.com"}}, lookup(WhoIs{}, errors.New("tailscaled down")))
-	if err := a.Authorize(ctxFrom("100.64.0.1")); status.Code(err) != codes.PermissionDenied {
-		t.Fatalf("fail closed expected: %v", err)
+	if err := a.Authorize(from("[::ffff:100.101.102.103]:5000")); !denied(err) {
+		t.Errorf("a mapped own address must be refused: %v", err)
 	}
 }
 
-func TestNoPeerDenies(t *testing.T) {
-	a := NewTailscale(Config{AllowUsers: []string{"admin@example.com"}}, lookup(WhoIs{LoginName: "admin@example.com"}, nil))
-	if err := a.Authorize(context.Background()); status.Code(err) != codes.PermissionDenied {
-		t.Fatalf("%v", err)
+func TestNoPeerOrJunkIsRefused(t *testing.T) {
+	a := NewTailnetOnlyWithLocal(self)
+	if err := a.Authorize(context.Background()); !denied(err) {
+		t.Errorf("no peer: %v", err)
+	}
+	junk := peer.NewContext(context.Background(), &peer.Peer{Addr: &net.UnixAddr{Name: "/tmp/x", Net: "unix"}})
+	if err := a.Authorize(junk); !denied(err) {
+		t.Errorf("unix socket peer: %v", err)
 	}
 }
 
-func TestLoadConfig(t *testing.T) {
-	d := t.TempDir()
-	c, err := LoadConfig(filepath.Join(d, "missing.json"))
-	if err != nil || len(c.AllowUsers) != 0 || len(c.AllowTags) != 0 {
-		t.Fatalf("missing file must yield an empty (deny-all) config: %v %v", c, err)
+func TestFailsClosedWhenLocalAddressesUnknown(t *testing.T) {
+	a := &tailnetOnly{localAddrs: func() ([]netip.Addr, error) { return nil, net.ErrClosed }}
+	if err := a.Authorize(from("100.64.0.1:5000")); !denied(err) {
+		t.Errorf("must fail closed: %v", err)
 	}
-	p := filepath.Join(d, "noded.json")
-	_ = os.WriteFile(p, []byte(`{"allow_users":["a@b.c"],"allow_tags":["tag:x"]}`), 0o600)
-	c, err = LoadConfig(p)
-	if err != nil || c.AllowUsers[0] != "a@b.c" || c.AllowTags[0] != "tag:x" {
-		t.Fatalf("%v %v", c, err)
+}
+
+func TestRealInterfaceAddressesIncludeLoopback(t *testing.T) {
+	as, err := interfaceAddrs()
+	if err != nil || len(as) == 0 {
+		t.Fatalf("%v %v", as, err)
 	}
-	_ = os.WriteFile(p, []byte(`{not json`), 0o600)
-	if _, err := LoadConfig(p); err == nil {
-		t.Fatal("corrupt config must be an error, not silently allow")
+	found := false
+	for _, a := range as {
+		if a.IsLoopback() {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("expected a loopback address among the node's own addresses")
 	}
 }

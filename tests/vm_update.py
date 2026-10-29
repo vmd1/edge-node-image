@@ -95,7 +95,8 @@ try:
     # --- wrong key: sign with a different key
     publish("2.0.0")
     env = dict(os.environ, GNUPGHOME=f"{ROOT}/.vm/gnupg-other")
-    os.makedirs(env["GNUPGHOME"], exist_ok=True); os.chmod(env["GNUPGHOME"], 0o700)
+    shutil.rmtree(env["GNUPGHOME"], ignore_errors=True)
+    os.makedirs(env["GNUPGHOME"]); os.chmod(env["GNUPGHOME"], 0o700)
     subprocess.run(["gpg", "--batch", "--quiet", "--passphrase", "", "--quick-generate-key", "other <o@example.invalid>", "ed25519", "sign", "never"], env=env, check=True, capture_output=True)
     os.remove(f"{SITE}/SHA256SUMS.gpg")
     subprocess.run(["gpg", "--batch", "--yes", "--detach-sign", "-u", "other", "-o", f"{SITE}/SHA256SUMS.gpg", f"{SITE}/SHA256SUMS"], env=env, check=True, capture_output=True)
@@ -106,9 +107,9 @@ try:
     publish("2.0.0")
     rc, out = nodectl("stage", "x")
     check("stage 2.0.0 succeeds", rc == 0, out[-400:])
-    rc, out = vm.sh("lsblk -no PARTLABEL /dev/vda | tr '\\n' ' '; ls /boot/EFI/Linux/")
+    rc, out = vm.sh("udevadm settle; lsblk -no PARTLABEL /dev/vda | tr '\\n' ' '; ls /boot/EFI/Linux/")
     check("slot B labelled edge-node_2.0.0 and its UKI is on the ESP with a try counter",
-          "edge-node_2.0.0 " in out + " " and "edge-node_2.0.0_verity" in out and "edge-node_2.0.0+3.efi" in out, out)
+          "edge-node_2.0.0 " in out + " " and "edge-node_2.0.0_verity" in out and "edge-node_2.0.0+3-0.efi" in out, out)
     print(out)
 
     # --- full update cycle

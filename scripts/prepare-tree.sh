@@ -34,6 +34,14 @@ tar -xzf "$cache/$ts" -C "$cache"
 install -m 0755 "$cache/tailscale_${TAILSCALE_VERSION}_${arch}/tailscale" "$tree/usr/local/bin/tailscale"
 install -m 0755 "$cache/tailscale_${TAILSCALE_VERSION}_${arch}/tailscaled" "$tree/usr/local/bin/tailscaled"
 
+# update source: a rolling release per architecture (sysupdate cannot tell architectures apart by file name)
+case "$arch" in arm64) ch=stable-arm64;; *) ch=stable-amd64;; esac
+echo "https://github.com/vmd1/edge-node-image/releases/download/$ch/" > "$tree/usr/lib/edge/update-url"
+# trust only our own key for update manifests (Debian's default keyring is replaced); the debug profile brings its own
+if [ -s signing/edge-node-image.pub.gpg ]; then
+  install -D -m 0644 signing/edge-node-image.pub.gpg "$tree/usr/lib/systemd/import-pubring.gpg"
+elif [ "${EDGE_RELEASE:-}" = 1 ]; then echo "release build without signing/edge-node-image.pub.gpg" >&2; exit 1; fi
+
 tags=""; [ "${EDGE_DEBUG_BUILD:-}" = 1 ] && tags="-tags debugauth"
 for c in noded nodectl; do
   # shellcheck disable=SC2086

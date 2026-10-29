@@ -1,0 +1,48 @@
+name: release
+# Tag vX.Y.Z -> build both architectures, sign, and publish to the rolling channel release (stable-<arch>) that nodes follow.
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: amd64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: signing key
+        env:
+          KEY: ${{ secrets.RELEASE_GPG_PRIVATE_KEY }}
+          PASS: ${{ secrets.RELEASE_GPG_PASSPHRASE }}
+        run: |
+          test -s signing/edge-node-image.pub.gpg || { echo "signing/edge-node-image.pub.gpg is missing; see signing/README.md"; exit 1; }
+          echo "$KEY" | gpg --batch --import
+          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+          echo "RELEASE_KEY=$(gpg --list-secret-keys --with-colons | awk -F: '/^fpr/{print $10; exit}')" >> "$GITHUB_ENV"
+      - name: build
+        run: |
+          EDGE_VERSION="${GITHUB_REF_NAME#v}" EDGE_ARCH=${{ matrix.arch }} EDGE_RELEASE=1 scripts/build-local.sh
+      - name: package and sign
+        env:
+          GPG_PASSPHRASE: ${{ secrets.RELEASE_GPG_PASSPHRASE }}
+        run: scripts/make-release.sh mkosi.output "${GITHUB_REF_NAME#v}" "release-${{ matrix.arch }}" "$RELEASE_KEY"
+      - name: publish to stable-${{ matrix.arch }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="stable-${{ matrix.arch }}"
+          gh release view "$tag" >/dev/null 2>&1 || gh release create "$tag" --title "$tag" --notes "Rolling channel followed by nodes. Do not download by hand." --prerelease
+          # replace the channel contents: nodes read SHA256SUMS in this directory
+          for a in $(gh release view "$tag" --json assets --jq '.assets[].name'); do gh release delete-asset "$tag" "$a" --yes; done
+          gh release upload "$tag" release-${{ matrix.arch }}/*

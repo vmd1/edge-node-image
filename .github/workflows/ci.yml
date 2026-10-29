@@ -1,0 +1,44 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  go:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go vet ./... && go vet -tags debugauth ./...
+      - run: go test ./... && go test -tags debugauth ./...
+      - name: release binary must not contain the allow-all authorizer
+        run: |
+          go build -o /tmp/noded ./cmd/noded
+          ! strings /tmp/noded | grep -q 'authorization is disabled'
+      - run: sudo apt-get install -y shellcheck && shellcheck scripts/*.sh mkosi.extra/usr/libexec/* mkosi.extra/usr/lib/edge/health.d/*
+
+  image:
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: amd64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: throwaway test key for the debug image
+        run: |
+          sudo apt-get install -y gnupg
+          scripts/test-key.sh
+      - name: build the debug image
+        run: EDGE_PROFILE=debug EDGE_VERSION=0.0.0-ci EDGE_ARCH=${{ matrix.arch }} scripts/build-local.sh
+      - name: the image must contain what the plan says
+        run: scripts/check-image.sh mkosi.output/edge-node.raw

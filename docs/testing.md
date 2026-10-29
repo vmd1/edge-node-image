@@ -4,7 +4,7 @@ Nothing is verified yet. Each line moves from "untested" to a result, with where
 
 | Check | Where | Result |
 | :--- | :--- | :--- |
-| mkosi builds the image (arm64) | local Docker | untested |
+| mkosi builds the image (arm64) | local Docker | **passes** (5.3 GB sparse raw, 377 MB on disk, kernel + initrd emitted). First attempt failed with "no kernel found" until `linux-image-arm64` was added per architecture. x86-64 not built locally. |
 | Image boots, root is read-only, /var mounts and grows | local VM | untested |
 | sysupdate stages root-b and flips; broken update falls back | local VM | untested |
 | zram, sysctl, journald settings applied | local VM | untested |

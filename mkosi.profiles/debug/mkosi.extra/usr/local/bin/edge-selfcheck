@@ -1,0 +1,17 @@
+#!/bin/sh
+# Prints what the plan says should be true. Debug profile only.
+exec >/dev/console 2>&1
+echo "EDGE-SELFCHECK-BEGIN"
+echo "--- root mount";   findmnt -no SOURCE,FSTYPE,OPTIONS /
+echo "--- var mount";    findmnt -no SOURCE,FSTYPE,SIZE,OPTIONS /var || echo "NO /var MOUNT"
+echo "--- write to root (must fail)"; touch /etc/should-fail 2>&1 && echo "ROOT IS WRITABLE" || echo "ok: root read-only"
+echo "--- write to var (must work)"; touch /var/should-work && echo "ok: var writable" && rm -f /var/should-work
+echo "--- swap";         swapon --show
+echo "--- sysctl";       sysctl vm.swappiness vm.page-cluster vm.vfs_cache_pressure vm.min_free_kbytes fs.inotify.max_user_instances
+echo "--- cmdline";      cat /proc/cmdline
+echo "--- interfaces";   ls /sys/class/net
+echo "--- memory";       free -m
+echo "--- listeners";    ss -tulpn 2>/dev/null || echo "(ss missing)"
+echo "--- failed units"; systemctl --failed --no-legend
+echo "--- partitions";   lsblk -o NAME,SIZE,PARTLABEL,FSTYPE,MOUNTPOINT
+echo "EDGE-SELFCHECK-END"

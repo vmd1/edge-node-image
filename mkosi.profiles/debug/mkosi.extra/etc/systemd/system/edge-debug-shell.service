@@ -6,7 +6,7 @@ ExecStart=/bin/bash --noprofile --norc --noediting -i
 StandardInput=tty-force
 StandardOutput=tty
 StandardError=tty
-TTYPath=/dev/ttyAMA0
+TTYPath=/dev/console
 TTYReset=yes
 Environment=PS1=# TERM=dumb
 Restart=always

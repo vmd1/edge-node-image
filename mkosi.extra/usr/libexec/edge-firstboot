@@ -6,21 +6,24 @@ V=/var/lib/edge; R=/run/edge
 install -d -m 0755 "$V" "$R"
 env_file="$V/bootstrap.env"
 
-if [ ! -s "$env_file" ]; then
-  echo "firstboot: no $env_file, reading OCI instance metadata"
-  imds=""
-  for i in $(seq 1 30); do
-    imds=$(curl -sf --max-time 5 -H "Authorization: Bearer Oracle" http://169.254.169.254/opc/v2/instance/ || true)
-    [ -n "$imds" ] && break
-    sleep 2
-  done
-  [ -n "$imds" ] || { echo "firstboot: no metadata and no bootstrap.env; nothing to configure" >&2; exit 1; }
+# Instance metadata is the source of truth whenever it is reachable (so settings added after the first boot are picked up).
+# With no IMDS (local VM tests) an existing bootstrap.env is used as is.
+imds=""
+tries=3; [ -s "$env_file" ] || tries=30
+for i in $(seq 1 $tries); do
+  imds=$(curl -sf --connect-timeout 2 --max-time 5 -H "Authorization: Bearer Oracle" http://169.254.169.254/opc/v2/instance/ || true)
+  [ -n "$imds" ] && break
+  sleep 2
+done
+if [ -n "$imds" ]; then
   umask 077
   {
     echo "NODE_NAME=$(printf '%s' "$imds" | jq -r '.displayName')"
     printf '%s' "$imds" | jq -r '.metadata // {} | to_entries[] | select(.key|test("^[a-z0-9_]+$")) | "\(.key|ascii_upcase)=\(.value|@sh)"'
   } > "$env_file.tmp"
   mv "$env_file.tmp" "$env_file"
+elif [ ! -s "$env_file" ]; then
+  echo "firstboot: no metadata and no bootstrap.env; nothing to configure" >&2; exit 1
 fi
 
 set -a; . "$env_file"; set +a

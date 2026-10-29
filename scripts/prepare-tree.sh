@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Assemble build/tree: the files mkosi copies into the image that are not in the repo as text
+# Assemble build/tree-<arch>: the files mkosi copies into the image that are not in the repo as text
 # (k3s, tailscale, the k3s airgap images, noded, nodectl). Run before mkosi; CI runs the same script.
 #
 #   scripts/prepare-tree.sh [arm64|amd64]     (default: the host's, i.e. arm64 on Apple Silicon)
@@ -9,7 +9,7 @@ cd "$(dirname "$0")/.."
 . scripts/versions.env
 arch="${1:-}"
 if [ -z "$arch" ]; then case "$(uname -m)" in arm64|aarch64) arch=arm64;; *) arch=amd64;; esac; fi
-cache="build/download/$arch"; tree="build/tree"
+cache="build/download/$arch"; tree="build/tree-$arch"
 mkdir -p "$cache" "$tree/usr/local/bin" "$tree/usr/bin" "$tree/usr/lib/edge/images"
 
 fetch() { # url file sha256-of-file(optional)

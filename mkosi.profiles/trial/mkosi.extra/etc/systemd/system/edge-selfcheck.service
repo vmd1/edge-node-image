@@ -1,0 +1,8 @@
+[Unit]
+Description=Print image self-check to the console (debug profile)
+After=multi-user.target local-fs.target swap.target systemd-sysctl.service
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/edge-selfcheck
+[Install]
+WantedBy=multi-user.target

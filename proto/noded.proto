@@ -1,0 +1,55 @@
+// noded: the node agent. Typed operations only; there is deliberately no exec or shell RPC.
+// UNTESTED draft; see docs/testing.md.
+syntax = "proto3";
+
+package noded.v1;
+
+option go_package = "github.com/vmd1/edge-node-image/gen/nodedv1";
+
+service Noded {
+  rpc Status(StatusRequest) returns (StatusResponse);
+  rpc Logs(LogsRequest) returns (stream LogLine);
+  rpc StageUpdate(StageUpdateRequest) returns (StageUpdateResponse);
+  rpc Reboot(RebootRequest) returns (RebootResponse);
+  rpc SetBootSlot(SetBootSlotRequest) returns (SetBootSlotResponse);
+  rpc GetRegistryConfig(GetRegistryConfigRequest) returns (RegistryConfig);
+  rpc SetRegistryConfig(RegistryConfig) returns (SetRegistryConfigResponse);
+}
+
+message StatusRequest {}
+message StatusResponse {
+  string image_version = 1;
+  string booted_slot = 2;          // "root-a" or "root-b"
+  string boot_assessment = 3;      // good / pending / bad
+  string available_version = 4;    // newest version sysupdate can see, if any
+  double mem_pressure_some_avg10 = 5;
+  double io_pressure_some_avg10 = 6;
+  uint64 mem_available_bytes = 7;
+  map<string, string> units = 8;   // unit name -> active state, for an allowlist of units
+  string external_ip = 9;
+  uint64 uptime_seconds = 10;
+}
+
+message LogsRequest {
+  string unit = 1;                 // must be on the allowlist
+  uint32 tail_lines = 2;
+  bool follow = 3;
+}
+message LogLine { string text = 1; }
+
+message StageUpdateRequest { string target_version = 1; }   // empty = newest allowed
+message StageUpdateResponse { string staged_version = 1; }
+
+message RebootRequest {}
+message RebootResponse {}
+
+message SetBootSlotRequest { string slot = 1; bool one_shot = 2; }
+message SetBootSlotResponse {}
+
+message GetRegistryConfigRequest {}
+message RegistryConfig {
+  // docker.io mirror, e.g. "https://mirror.gcr.io"; empty = pull from Docker Hub directly.
+  string docker_io_mirror = 1;
+  string docker_io_fallback = 2;
+}
+message SetRegistryConfigResponse { bool k3s_agent_restarted = 1; }

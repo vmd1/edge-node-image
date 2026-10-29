@@ -72,8 +72,10 @@ try:
     check("node external IP is set", "ExternalIP" in out, out)
 
     vm.sh("systemctl start --no-block edge-node-annotate", timeout=60)
-    time.sleep(5)
-    rc, out = dk("exec", NAME, "kubectl", "get", "node", "edge-test-01", "-o", "jsonpath={.metadata.annotations}")
+    for _ in range(24):
+        rc, out = dk("exec", NAME, "kubectl", "get", "node", "edge-test-01", "-o", "jsonpath={.metadata.annotations}")
+        if "node.vmd1.dev/image-version" in out: break
+        time.sleep(5)
     check("image-version annotation set with the kubelet's own credentials", "node.vmd1.dev/image-version" in out and "1.0.0" in out, out)
 
     rc, out = vm.sh("/usr/libexec/edge-health; echo health_rc=$?", timeout=200)
@@ -100,8 +102,8 @@ try:
     # password secret is removed (this is what will happen when zeus-01 etc. are replaced)
     vm.sh("systemctl stop k3s-agent; rm -rf /var/lib/rancher/k3s /var/lib/edge/rancher-node/*; systemctl start --no-block k3s-agent", timeout=90)
     time.sleep(60)
-    rc, out = vm.sh("journalctl -u k3s-agent --no-pager -n 30 | grep -i -E 'password|rejected|duplicate|unauthorized' | tail -3 | cut -c1-200")
-    check("a replacement with the same name is refused while the old node password exists", "assword" in out or "ejected" in out or "uplicate" in out, out)
+    rc, out = vm.sh("journalctl -u k3s-agent --no-pager -n 30 | grep -i -E 'password rejected|duplicate' | tail -1 | cut -c1-260")
+    check("a replacement with the same name is refused while the old node password exists", "assword rejected" in out or "uplicate" in out, out)
     dk("exec", NAME, "kubectl", "delete", "node", "edge-test-01", "--ignore-not-found")
     dk("exec", NAME, "kubectl", "-n", "kube-system", "delete", "secret", "edge-test-01.node-password.k3s", "--ignore-not-found")
     vm.sh("systemctl restart --no-block k3s-agent", timeout=60)

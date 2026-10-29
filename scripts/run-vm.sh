@@ -10,7 +10,11 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 q=/opt/homebrew/share/qemu
 mkdir -p .vm
-[ -f .vm/disk.raw ] || cp -c mkosi.output/edge-node.raw .vm/disk.raw 2>/dev/null || cp mkosi.output/edge-node.raw .vm/disk.raw
+if [ ! -f .vm/disk.raw ]; then
+  cp -c mkosi.output/edge-node.raw .vm/disk.raw 2>/dev/null || cp mkosi.output/edge-node.raw .vm/disk.raw
+  # extra room at the end so the first-boot systemd-repart has something to grow /var into
+  truncate -s "${EDGE_DISK_SIZE:-8G}" .vm/disk.raw
+fi
 [ -f .vm/vars.fd ] || cp "$q/edk2-arm-vars.fd" .vm/vars.fd
 args=(-machine virt -accel hvf -cpu host -smp 2 -m 1024
   -drive if=pflash,format=raw,readonly=on,file="$q/edk2-aarch64-code.fd"

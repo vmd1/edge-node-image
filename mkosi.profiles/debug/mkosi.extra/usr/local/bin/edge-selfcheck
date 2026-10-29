@@ -12,6 +12,10 @@ echo "--- cmdline";      cat /proc/cmdline
 echo "--- interfaces";   ls /sys/class/net
 echo "--- memory";       free -m
 echo "--- listeners";    ss -tulpn 2>/dev/null || echo "(ss missing)"
+echo "--- resolv.conf"; cat /etc/resolv.conf
+echo "--- addresses"; ip -br addr
+echo "--- port 53 listeners (must be none)"; ss -tulnH 2>/dev/null | grep -E ":53 " || echo "none"
+echo "--- cmdline roothash"; grep -o "roothash=[0-9a-f]*" /proc/cmdline | cut -c1-30
 echo "--- failed units"; systemctl --failed --no-legend
 echo "--- partitions";   lsblk -o NAME,SIZE,PARTLABEL,FSTYPE,MOUNTPOINT
 echo "EDGE-SELFCHECK-END"

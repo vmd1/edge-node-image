@@ -1,0 +1,10 @@
+[Match]
+Name=eth0
+
+[Network]
+DHCP=ipv4
+# DNS is the static /etc/resolv.conf (1.1.1.1, 8.8.8.8), as on the current nodes. No systemd-resolved: its stub
+# listener on 127.0.0.53:53 interferes with PowerDNS on port 53.
+
+[DHCPv4]
+UseDNS=no

@@ -4,7 +4,7 @@ ProtectVersion=%A
 [Source]
 Type=url-file
 Path=@UPDATE_URL@
-MatchPattern=%M_@v_@u.root.raw.zst
+MatchPattern=%M_@v_@u.root.raw.xz
 
 [Target]
 Type=partition

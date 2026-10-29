@@ -88,7 +88,7 @@ class VM:
         body = out.split(f"echo {tag}$?__", 1)[-1]
         body = re.sub(tag + r"\d+__.*", "", body, flags=re.S)
         body = re.sub(r"\x1b\[[0-9;?]*[A-Za-z]|\x1b\][^\x07]*\x07|\x1b[=>]|\x1b\[!p", "", body)
-        return rc, body.strip()
+        return rc, body.replace("\r", "").strip()
 
     def stop(self):
         if self.proc:

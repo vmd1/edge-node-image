@@ -1,0 +1,7 @@
+#!/bin/sh
+# In emergency mode on a boot that is still on probation (the entry has a +N counter): reboot so the bootloader can fall back.
+if [ -e /sys/firmware/efi/efivars/LoaderBootCountPath-4a67b082-0a4c-41cf-b6c7-440b29bb8c4f ]; then
+  echo "emergency mode on a probation boot: rebooting" >/dev/console
+  sleep 5; systemctl --no-block --force reboot
+fi
+exit 0

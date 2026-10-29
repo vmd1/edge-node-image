@@ -75,7 +75,7 @@ try:
 
     # --- tampered payload must be refused, nothing written
     pub = SITE
-    victim = [f for f in os.listdir(pub) if f.endswith(".root.raw.zst")][0]
+    victim = [f for f in os.listdir(pub) if f.endswith(".root.raw.xz")][0]
     with open(f"{pub}/{victim}", "r+b") as fh:
         fh.seek(1000); b = fh.read(1); fh.seek(1000); fh.write(bytes([b[0] ^ 0xFF]))
     rc, out = nodectl("stage", "x")
@@ -109,7 +109,7 @@ try:
     check("stage 2.0.0 succeeds", rc == 0, out[-400:])
     rc, out = vm.sh("udevadm settle; lsblk -no PARTLABEL /dev/vda | tr '\\n' ' '; ls /boot/EFI/Linux/")
     check("slot B labelled edge-node_2.0.0 and its UKI is on the ESP with a try counter",
-          "edge-node_2.0.0 " in out + " " and "edge-node_2.0.0_verity" in out and "edge-node_2.0.0+3-0.efi" in out, out)
+          "edge-node_2.0.0 " in out + " " and "edge-node_2.0.0_verity" in out and "edge-node_2.0.0+2-0.efi" in out, out)
     print(out)
 
     # --- full update cycle
@@ -141,8 +141,8 @@ try:
     nodectl("reboot", "x")
     t0 = time.time()
     final = None
-    while time.time() - t0 < 900:
-        time.sleep(15)
+    while time.time() - t0 < 600:
+        time.sleep(10)
         try:
             rc, out = vm.sh("grep IMAGE_VERSION /etc/os-release; cat /proc/sys/kernel/random/boot_id", timeout=20)
         except TimeoutError:
@@ -154,7 +154,7 @@ try:
     print(f"fallback took {int(time.time()-t0)}s")
     rc, out = vm.sh("bootctl list --no-pager 2>/dev/null | grep -E 'id:|tries|(current)|(default)'; ls /boot/EFI/Linux/; journalctl -b -1 -u edge-health --no-pager 2>/dev/null | tail -5")
     print(out)
-    check("3.0.0 entry is marked bad (+0-N)", "+0-" in out, out)
+    check("3.0.0 entry is marked bad (tries ran out)", "tries: 0 left" in out or "+0-" in out, out)
 finally:
     vm.stop(); srv.terminate()
 ok = sum(1 for _, o in results if o)

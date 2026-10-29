@@ -4,9 +4,9 @@
 # machine reboots, so the counter runs down and the bootloader falls back to the previous slot. A failure on a boot that
 # is already blessed never reboots (a tailnet outage must not cause a reboot loop).
 set -u
-limit="${EDGE_HEALTH_TIMEOUT:-240}"
 [ -r /etc/edge/health.conf ] && . /etc/edge/health.conf
 [ -r /var/lib/edge/health.conf ] && . /var/lib/edge/health.conf   # local override (tests, break-glass)
+limit="${EDGE_HEALTH_TIMEOUT:-240}"
 skip=",${EDGE_HEALTH_SKIP:-},"
 end=$(( $(date +%s) + limit ))
 fail() {

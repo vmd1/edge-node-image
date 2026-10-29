@@ -57,8 +57,8 @@ try:
     rc, out = vm.sh("readlink -f /etc/rancher/k3s/registries.yaml; cat /var/lib/edge/registries.yaml")
     check("registries.yaml is the /var file and has the mirror default", "mirror.gcr.io" in out and "/var/lib/edge/registries.yaml" in out, out)
 
-    rc, out = vm.sh("systemctl start k3s-agent; sleep 5; systemctl is-active k3s-agent", timeout=120)
-    check("k3s-agent starts", "active" in out, out)
+    rc, out = vm.sh("systemctl start --no-block k3s-agent; sleep 8; systemctl is-active k3s-agent", timeout=120)
+    check("k3s-agent starts (active, or activating until it has joined)", "active" in out or "activating" in out, out)
     node = ""
     for _ in range(60):
         rc, node = dk("exec", NAME, "kubectl", "get", "node", "edge-test-01", "--no-headers")
@@ -71,7 +71,7 @@ try:
           "node-type" in out and "ingress" in out and "NoSchedule" in out, out)
     check("node external IP is set", "ExternalIP" in out, out)
 
-    vm.sh("systemctl start edge-node-annotate", timeout=120)
+    vm.sh("systemctl start --no-block edge-node-annotate", timeout=60)
     time.sleep(5)
     rc, out = dk("exec", NAME, "kubectl", "get", "node", "edge-test-01", "-o", "jsonpath={.metadata.annotations}")
     check("image-version annotation set with the kubelet's own credentials", "node.vmd1.dev/image-version" in out and "1.0.0" in out, out)
@@ -95,6 +95,23 @@ try:
 
     rc, out = vm.sh("systemctl stop k3s-agent; EDGE_HEALTH_TIMEOUT=12 /usr/libexec/edge-health; echo health_rc=$?; systemctl is-system-running", timeout=120)
     check("health gate fails when the node is not Ready, and does not reboot a blessed boot", "health_rc=1" in out, out)
+
+    # --- replacement with the same hostname: a fresh disk has a new node password; the server must refuse it until the old
+    # password secret is removed (this is what will happen when zeus-01 etc. are replaced)
+    vm.sh("systemctl stop k3s-agent; rm -rf /var/lib/rancher/k3s /var/lib/edge/rancher-node/*; systemctl start --no-block k3s-agent", timeout=90)
+    time.sleep(60)
+    rc, out = vm.sh("journalctl -u k3s-agent --no-pager -n 30 | grep -i -E 'password|rejected|duplicate|unauthorized' | tail -3 | cut -c1-200")
+    check("a replacement with the same name is refused while the old node password exists", "assword" in out or "ejected" in out or "uplicate" in out, out)
+    dk("exec", NAME, "kubectl", "delete", "node", "edge-test-01", "--ignore-not-found")
+    dk("exec", NAME, "kubectl", "-n", "kube-system", "delete", "secret", "edge-test-01.node-password.k3s", "--ignore-not-found")
+    vm.sh("systemctl restart --no-block k3s-agent", timeout=60)
+    for _ in range(60):
+        rc, node = dk("exec", NAME, "kubectl", "get", "node", "edge-test-01", "--no-headers")
+        if rc == 0 and " Ready" in node: break
+        time.sleep(5)
+    check("after deleting the old node and its password secret the replacement joins", " Ready" in node, node)
+    rc, out = dk("exec", NAME, "kubectl", "get", "node", "edge-test-01", "-o", "jsonpath={.spec.taints}")
+    check("the replacement has the taint straight away", "NoSchedule" in out, out)
 
     rc, out = vm.sh("systemctl status systemd-oomd --no-pager 2>&1 | head -14; journalctl -u systemd-oomd --no-pager -n 12 | cut -c1-200")
     print("oomd:\n" + out)

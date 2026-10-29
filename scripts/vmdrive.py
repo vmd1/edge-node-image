@@ -5,11 +5,12 @@ Q = "/opt/homebrew/share/qemu"
 
 
 class VM:
-    def __init__(self, disk, vars_fd, workdir, mem=1024, smp=2, fwd=()):
+    def __init__(self, disk, vars_fd, workdir, mem=1024, smp=2, fwd=(), extra_disks=()):
         self.disk, self.vars_fd, self.dir = disk, vars_fd, workdir
         self.sock = os.path.join(workdir, "serial.sock")
         self.logfile = os.path.join(workdir, "console.log")
         self.mem, self.smp, self.fwd = mem, smp, fwd
+        self.extra_disks = list(extra_disks)
         self.buf = ""
         self.lock = threading.Lock()
         self.proc = None
@@ -26,6 +27,7 @@ class VM:
                 "-drive", f"if=pflash,format=raw,file={self.vars_fd}",
                 "-drive", f"if=none,id=disk0,format=raw,file={self.disk}",
                 "-device", "virtio-blk-pci,drive=disk0",
+                *[a for i, d in enumerate(self.extra_disks) for a in ('-drive', f'if=none,id=xd{i},format=raw,file={d}', '-device', f'virtio-blk-pci,drive=xd{i}')],
                 "-netdev", netdev, "-device", "virtio-net-pci,netdev=net0,romfile=",
                 "-display", "none", "-monitor", "none",
                 "-chardev", f"socket,id=ser0,path={self.sock},server=on,wait=off,logfile={self.logfile}",
@@ -94,3 +96,21 @@ class VM:
         if self.proc:
             self.proc.kill()
             self.proc.wait()
+
+
+class TcpSerial(VM):
+    """A VM that is already running somewhere else, reached through a TCP serial port (for example via ssh -L)."""
+    def __init__(self, host="127.0.0.1", port=4555, logfile="/dev/null"):
+        self.buf = ""; self.lock = threading.Lock(); self.proc = None
+        self.host, self.port = host, port
+
+    def start(self):
+        self.s = socket.create_connection((self.host, self.port), timeout=30)
+        self.s.settimeout(None)
+        threading.Thread(target=self._read, daemon=True).start()
+
+    def stop(self):
+        try:
+            self.s.close()
+        except OSError:
+            pass

@@ -1,6 +1,8 @@
 #!/bin/sh
 # node.vmd1.dev/image-version=<IMAGE_VERSION> on this node, using the kubelet's own credentials.
+# --field-manager: Flux owns the real nodes' Node objects and strips annotations set under the default manager name
+# ("kubectl-annotate") at its next reconcile (seen on zeus-01); a custom manager name is left alone.
 set -eu
 . /etc/os-release
 exec /usr/local/bin/k3s kubectl --kubeconfig /var/lib/rancher/k3s/agent/kubelet.kubeconfig --request-timeout=15s \
-  annotate node "$(hostname)" "node.vmd1.dev/image-version=${IMAGE_VERSION}" --overwrite
+  annotate --field-manager=edge-node-annotate node "$(hostname)" "node.vmd1.dev/image-version=${IMAGE_VERSION}" --overwrite

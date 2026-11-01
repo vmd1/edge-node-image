@@ -17,6 +17,9 @@ TasksMax=infinity
 TimeoutStartSec=0
 Restart=always
 RestartSec=5s
+# Children inherit the bounding set, so no pod can ever hold CAP_SYS_MODULE or CAP_SYS_BOOT (modules are preloaded by
+# modules-load.d/edge.conf, so the agent does not need to load any).
+CapabilityBoundingSet=~CAP_SYS_MODULE CAP_SYS_BOOT
 ExecStartPre=/usr/libexec/edge-k3s-prep
 ExecStart=/usr/local/bin/k3s agent --config /var/lib/edge/k3s-config.yaml
 

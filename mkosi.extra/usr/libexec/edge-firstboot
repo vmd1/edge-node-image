@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/bin/sh
 # Runs on every boot, idempotent. Turns instance metadata (or a pre-seeded /var/lib/edge/bootstrap.env) into the node's
 # runtime config: node name, Tailscale login, noded allowlist, k3s join settings. Secrets live only under /var (0600).
-set -euo pipefail
+set -eu
 V=/var/lib/edge; R=/run/edge
 install -d -m 0755 "$V" "$R"
 env_file="$V/bootstrap.env"

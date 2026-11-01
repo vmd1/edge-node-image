@@ -37,3 +37,61 @@ for kdir in */; do
   mkosi-chroot depmod -a "$kdir"
   echo "modules $kdir: ${before}M -> $(du -sm "$k" | cut -f1)M, $(find "$k" -name '*.ko*' | wc -l) files"
 done
+
+# ---------------------------------------------------------------------------------------------------------------------------
+# Phase A hardening: take away everything a process could be made to run that the node does not need. The root is read-only and
+# there is no login path (locked root, no SSH, no console login on the release build), so the risk is a process being made to
+# run a binary, not someone logging in. The debug and trial profiles keep their shell and tools.
+cd "$BUILDROOT"
+debug=0
+case " ${PROFILES:-} " in *" debug "*|*" trial "*) debug=1;; esac
+
+# Package list for auditing, written before dpkg is removed (the SBOM in Phase G builds on it).
+mkdir -p usr/lib/edge
+mkosi-chroot dpkg-query -W -f '${Package} ${Version} ${Architecture}\n' > usr/lib/edge/packages.txt
+
+# No setuid or setgid binary: su, mount, umount, unix_chkpwd, the polkit and dbus helpers and the rest are not needed by any unit.
+find . -xdev -type f \( -perm -4000 -o -perm -2000 \) -exec chmod ug-s {} +
+
+if [ "$debug" = 0 ]; then
+  # Nothing installs packages on a read-only root.
+  rm -rf usr/bin/dpkg usr/bin/dpkg-* usr/bin/apt usr/bin/apt-* usr/lib/apt usr/lib/dpkg etc/apt etc/dpkg \
+         usr/share/dpkg usr/share/perl* usr/lib/*-linux-gnu/perl* usr/lib/*-linux-gnu/perl-base usr/bin/perl* usr/bin/pod* \
+         usr/bin/bash usr/bin/rbash usr/bin/bashbug
+  rm -f bin/bash bin/rbash
+  # keep the dpkg status file for the audit trail, but nothing can read or write it
+  # sh is dash; every edge script is POSIX sh
+  [ "$(readlink usr/bin/sh)" = dash ] || ln -sf dash usr/bin/sh
+fi
+
+# Self-check: fail the build if any of this did not take effect.
+n=$(find . -xdev -type f \( -perm -4000 -o -perm -2000 \) | wc -l)
+[ "$n" = 0 ] || { echo "finalize: $n setuid/setgid files remain" >&2; find . -xdev -type f \( -perm -4000 -o -perm -2000 \) >&2; exit 1; }
+if [ "$debug" = 0 ]; then
+  for b in usr/bin/dpkg usr/bin/apt usr/bin/perl usr/bin/bash usr/bin/rbash; do
+    [ ! -e "$b" ] || { echo "finalize: $b is still in the image" >&2; exit 1; }
+  done
+  # every shell script shipped by us must run under dash
+  for f in usr/libexec/edge-* usr/lib/edge/health.d/*; do
+    [ -f "$f" ] || continue
+    case "$(head -1 "$f")" in "#!/bin/sh"|"#!/usr/bin/env sh") ;; *) echo "finalize: $f does not use /bin/sh" >&2; exit 1;; esac
+  done
+fi
+# the kernel command line in mkosi.conf relies on these; do not build an image where they would be silently ignored
+cfg=$(ls boot/config-* usr/lib/modules/*/config 2>/dev/null | head -1 || true)
+if [ -n "$cfg" ]; then
+  for opt in CONFIG_SECURITY_LOCKDOWN_LSM=y CONFIG_MODULE_SIG=y CONFIG_STRICT_DEVMEM=y CONFIG_SLAB_MERGE_DEFAULT; do
+    grep -q "^${opt%%=*}" "$cfg" && echo "kernel config: $(grep "^${opt%%=*}" "$cfg")" || echo "kernel config: ${opt%%=*} not set" >&2
+  done
+  for opt in CONFIG_SECURITY_LOCKDOWN_LSM=y CONFIG_MODULE_SIG=y CONFIG_STRICT_DEVMEM=y; do
+    grep -q "^$opt" "$cfg" || { echo "finalize: kernel config lacks $opt" >&2; exit 1; }
+  done
+else
+  echo "finalize: no kernel config found to check lockdown support" >&2
+fi
+{
+  echo "files: $(find . -xdev | wc -l)"
+  echo "setuid/setgid: $n"
+  echo "debug-profile: $debug"
+} > usr/lib/edge/hardening-report.txt
+cat usr/lib/edge/hardening-report.txt

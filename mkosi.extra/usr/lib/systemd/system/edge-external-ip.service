@@ -6,3 +6,12 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 ExecStart=/usr/libexec/edge-external-ip
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+SystemCallArchitectures=native

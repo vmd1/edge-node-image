@@ -1,0 +1,19 @@
+[Unit]
+Description=Forbid loading further kernel modules once the node is up
+After=k3s-agent.service edge-health.service
+Wants=edge-health.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/libexec/edge-module-lockdown
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+LockPersonality=yes
+RestrictRealtime=yes
+RestrictNamespaces=yes
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target

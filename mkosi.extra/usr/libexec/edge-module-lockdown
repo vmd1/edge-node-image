@@ -1,0 +1,16 @@
+#!/bin/sh
+# Once the node is up and its pods have had time to set up their rules, forbid loading any further kernel module
+# (kernel.modules_disabled=1, one-way until the next boot). Skipped when EDGE_MODULE_LOCKDOWN=off in the instance metadata
+# (bootstrap.env), which is the escape hatch if an upgrade needs a module that edge.conf does not preload. Phase B moves the
+# switch into EdgeNodeConfig.
+set -eu
+V=/var/lib/edge
+[ -r "$V/bootstrap.env" ] && { set -a; . "$V/bootstrap.env"; set +a; }
+if [ "${EDGE_MODULE_LOCKDOWN:-on}" = off ]; then echo "module-lockdown: disabled by EDGE_MODULE_LOCKDOWN=off"; exit 0; fi
+# wait for the health gate's view of the world: tailscaled up and the k3s node Ready (edge-health exits once both hold)
+i=0
+until systemctl is-active --quiet edge-health.service || [ "$i" -ge 90 ]; do sleep 5; i=$((i + 1)); done
+sleep "${EDGE_LOCKDOWN_SETTLE:-120}"
+[ "$(cat /proc/sys/kernel/modules_disabled)" = 1 ] && exit 0
+echo 1 > /proc/sys/kernel/modules_disabled
+echo "module-lockdown: kernel.modules_disabled=1 ($(wc -l < /proc/modules) modules loaded)"

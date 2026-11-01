@@ -9,6 +9,15 @@ Type=oneshot
 Restart=on-failure
 RestartSec=30
 ExecStart=/usr/libexec/edge-node-annotate
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+SystemCallArchitectures=native
 
 [Install]
 WantedBy=multi-user.target

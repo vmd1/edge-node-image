@@ -11,6 +11,15 @@ RemainAfterExit=yes
 Restart=on-failure
 RestartSec=20
 ExecStart=/usr/libexec/edge-firstboot
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+SystemCallArchitectures=native
 
 [Install]
 WantedBy=multi-user.target

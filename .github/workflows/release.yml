@@ -3,6 +3,12 @@ name: release
 on:
   push:
     tags: ["v*"]
+  # Build and sign a test version without touching the stable channel; the release directory is attached to the run as an artifact.
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "version to build (for example 0.2.2-rc1); never published"
+        required: true
 
 jobs:
   build:
@@ -16,6 +22,8 @@ jobs:
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: write
+    env:
+      EDGE_REL_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -32,12 +40,20 @@ jobs:
           echo "RELEASE_KEY=$(gpg --list-secret-keys --with-colons | awk -F: '/^fpr/{print $10; exit}')" >> "$GITHUB_ENV"
       - name: build
         run: |
-          EDGE_VERSION="${GITHUB_REF_NAME#v}" EDGE_ARCH=${{ matrix.arch }} EDGE_RELEASE=1 scripts/build-local.sh
+          EDGE_VERSION="${EDGE_REL_VERSION#v}" EDGE_ARCH=${{ matrix.arch }} EDGE_RELEASE=1 scripts/build-local.sh
       - name: package and sign
         env:
           GPG_PASSPHRASE: ${{ secrets.RELEASE_GPG_PASSPHRASE }}
-        run: scripts/make-release.sh mkosi.output "${GITHUB_REF_NAME#v}" "release-${{ matrix.arch }}" "$RELEASE_KEY"
+        run: scripts/make-release.sh mkosi.output "${EDGE_REL_VERSION#v}" "release-${{ matrix.arch }}" "$RELEASE_KEY"
+      - name: attach the release directory (build-only runs)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.arch }}
+          path: release-${{ matrix.arch }}
+          retention-days: 7
       - name: publish to stable-${{ matrix.arch }}
+        if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

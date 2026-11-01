@@ -1,5 +1,5 @@
 name: release
-# Tag vX.Y.Z -> build both architectures, sign, and publish to the rolling channel release (stable-<arch>) that nodes follow.
+# Tag vX.Y.Z -> build amd64, sign, and publish to the rolling channel release (stable-amd64) that nodes follow.
 on:
   push:
     tags: ["v*"]
@@ -11,8 +11,8 @@ jobs:
         include:
           - runner: ubuntu-24.04
             arch: amd64
-          - runner: ubuntu-24.04-arm
-            arch: arm64
+          # arm64 is not built: no node uses it and the image has never been booted on arm64. Add
+          # `- runner: ubuntu-24.04-arm` / `arch: arm64` back once an arm64 node exists.
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: write
@@ -43,6 +43,8 @@ jobs:
         run: |
           tag="stable-${{ matrix.arch }}"
           gh release view "$tag" >/dev/null 2>&1 || gh release create "$tag" --title "$tag" --notes "Rolling channel followed by nodes. Do not download by hand." --prerelease
-          # replace the channel contents: nodes read SHA256SUMS in this directory
-          for a in $(gh release view "$tag" --json assets --jq '.assets[].name'); do gh release delete-asset "$tag" "$a" --yes; done
-          gh release upload "$tag" release-${{ matrix.arch }}/*
+          # replace the channel contents: nodes read SHA256SUMS in this directory. Upload first (SHA256SUMS last, so
+          # it only ever lists files that exist), then drop assets that are no longer part of the release.
+          cd release-${{ matrix.arch }}
+          gh release upload "$tag" --clobber $(ls | grep -v '^SHA256SUMS') SHA256SUMS SHA256SUMS.gpg
+          for a in $(gh release view "$tag" --json assets --jq '.assets[].name'); do [ -e "$a" ] || gh release delete-asset "$tag" "$a" --yes; done

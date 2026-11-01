@@ -9,6 +9,10 @@ on:
       version:
         description: "version to build (for example 0.2.2-rc1); never published"
         required: true
+      profile:
+        description: "mkosi profile (debug: serial autologin for VM tests; the disk image is attached to the run). Empty: the release build."
+        required: false
+        default: ""
 
 jobs:
   build:
@@ -40,11 +44,22 @@ jobs:
           echo "RELEASE_KEY=$(gpg --list-secret-keys --with-colons | awk -F: '/^fpr/{print $10; exit}')" >> "$GITHUB_ENV"
       - name: build
         run: |
-          EDGE_VERSION="${EDGE_REL_VERSION#v}" EDGE_ARCH=${{ matrix.arch }} EDGE_RELEASE=1 scripts/build-local.sh
+          EDGE_VERSION="${EDGE_REL_VERSION#v}" EDGE_ARCH=${{ matrix.arch }} EDGE_RELEASE=1 EDGE_PROFILE="${{ github.event_name == 'workflow_dispatch' && inputs.profile || '' }}" scripts/build-local.sh
       - name: package and sign
         env:
           GPG_PASSPHRASE: ${{ secrets.RELEASE_GPG_PASSPHRASE }}
         run: scripts/make-release.sh mkosi.output "${EDGE_REL_VERSION#v}" "release-${{ matrix.arch }}" "$RELEASE_KEY"
+      - name: compress the disk image (debug-profile runs, for VM tests)
+        if: github.event_name == 'workflow_dispatch' && inputs.profile != ''
+        run: zstd -T0 -3 -f mkosi.output/edge-node.raw -o disk-${{ matrix.arch }}.raw.zst
+      - name: attach the debug disk image
+        if: github.event_name == 'workflow_dispatch' && inputs.profile != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: disk-${{ matrix.arch }}-${{ inputs.profile }}
+          path: disk-${{ matrix.arch }}.raw.zst
+          retention-days: 3
+          compression-level: 0
       - name: attach the release directory (build-only runs)
         if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4

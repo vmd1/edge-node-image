@@ -44,6 +44,7 @@ const (
 	Noded_Events_FullMethodName              = "/noded.v1.Noded/Events"
 	Noded_Support_FullMethodName             = "/noded.v1.Noded/Support"
 	Noded_Pcap_FullMethodName                = "/noded.v1.Noded/Pcap"
+	Noded_WhoAmI_FullMethodName              = "/noded.v1.Noded/WhoAmI"
 )
 
 // NodedClient is the client API for Noded service.
@@ -74,6 +75,7 @@ type NodedClient interface {
 	Events(ctx context.Context, in *EventsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogLine], error)
 	Support(ctx context.Context, in *SupportRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Chunk], error)
 	Pcap(ctx context.Context, in *PcapRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Chunk], error)
+	WhoAmI(ctx context.Context, in *WhoAmIRequest, opts ...grpc.CallOption) (*WhoAmIResponse, error)
 }
 
 type nodedClient struct {
@@ -340,6 +342,16 @@ func (c *nodedClient) Pcap(ctx context.Context, in *PcapRequest, opts ...grpc.Ca
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Noded_PcapClient = grpc.ServerStreamingClient[Chunk]
 
+func (c *nodedClient) WhoAmI(ctx context.Context, in *WhoAmIRequest, opts ...grpc.CallOption) (*WhoAmIResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(WhoAmIResponse)
+	err := c.cc.Invoke(ctx, Noded_WhoAmI_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // NodedServer is the server API for Noded service.
 // All implementations must embed UnimplementedNodedServer
 // for forward compatibility.
@@ -368,6 +380,7 @@ type NodedServer interface {
 	Events(*EventsRequest, grpc.ServerStreamingServer[LogLine]) error
 	Support(*SupportRequest, grpc.ServerStreamingServer[Chunk]) error
 	Pcap(*PcapRequest, grpc.ServerStreamingServer[Chunk]) error
+	WhoAmI(context.Context, *WhoAmIRequest) (*WhoAmIResponse, error)
 	mustEmbedUnimplementedNodedServer()
 }
 
@@ -443,6 +456,9 @@ func (UnimplementedNodedServer) Support(*SupportRequest, grpc.ServerStreamingSer
 }
 func (UnimplementedNodedServer) Pcap(*PcapRequest, grpc.ServerStreamingServer[Chunk]) error {
 	return status.Error(codes.Unimplemented, "method Pcap not implemented")
+}
+func (UnimplementedNodedServer) WhoAmI(context.Context, *WhoAmIRequest) (*WhoAmIResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method WhoAmI not implemented")
 }
 func (UnimplementedNodedServer) mustEmbedUnimplementedNodedServer() {}
 func (UnimplementedNodedServer) testEmbeddedByValue()               {}
@@ -833,6 +849,24 @@ func _Noded_Pcap_Handler(srv interface{}, stream grpc.ServerStream) error {
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Noded_PcapServer = grpc.ServerStreamingServer[Chunk]
 
+func _Noded_WhoAmI_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(WhoAmIRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodedServer).WhoAmI(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Noded_WhoAmI_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodedServer).WhoAmI(ctx, req.(*WhoAmIRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Noded_ServiceDesc is the grpc.ServiceDesc for Noded service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -911,6 +945,10 @@ var Noded_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Health",
 			Handler:    _Noded_Health_Handler,
+		},
+		{
+			MethodName: "WhoAmI",
+			Handler:    _Noded_WhoAmI_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

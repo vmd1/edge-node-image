@@ -57,9 +57,10 @@ type Server struct {
 	pb.UnimplementedNodedServer
 	P         Paths
 	R         Runner
-	mu        sync.Mutex // one mutating operation at a time
-	Units     []string   // units reported by Status
-	HealthDir string     // overridable in tests (default /usr/lib/edge/health.d)
+	mu        sync.Mutex       // one mutating operation at a time
+	Units     []string         // units reported by Status
+	Mode      func() auth.Mode // role mode reported by WhoAmI (nil = audit)
+	HealthDir string           // overridable in tests (default /usr/lib/edge/health.d)
 }
 
 func New(p Paths, r Runner) *Server { return &Server{P: p, R: r, Units: StatusUnits} }

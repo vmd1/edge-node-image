@@ -47,8 +47,15 @@ func main() {
 	if os.Getenv("NODED_CONFIG_AGENT") != "0" {
 		go runConfigAgent(ctx)
 	}
-	g := grpc.NewServer(server.Interceptors(a)...)
-	server.New(server.DefaultPaths(), server.ExecRunner{}).Register(g)
+	opts := server.Interceptors(a)
+	srv := server.New(server.DefaultPaths(), server.ExecRunner{})
+	if os.Getenv("NODED_ROLES") != "off" { // roles: identify callers (Tailscale whois), audit every call, enforce when configured
+		pol := server.NewPolicy(*sock, "/var/lib/edge")
+		opts = server.PolicyInterceptors(a, pol)
+		srv.Mode = pol.Mode
+	}
+	g := grpc.NewServer(opts...)
+	srv.Register(g)
 	go func() { <-ctx.Done(); g.GracefulStop() }()
 	log.Printf("listening on %s", addr)
 	if err := g.Serve(lis); err != nil {

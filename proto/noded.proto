@@ -31,6 +31,7 @@ service Noded {
   rpc Events(EventsRequest) returns (stream LogLine);
   rpc Support(SupportRequest) returns (stream Chunk);
   rpc Pcap(PcapRequest) returns (stream Chunk);
+  rpc WhoAmI(WhoAmIRequest) returns (WhoAmIResponse);
 }
 
 message StatusRequest {}
@@ -115,3 +116,5 @@ message SupportRequest {}
 message Chunk { bytes data = 1; }
 // A bounded capture: at most 120 s and 50 MB, one at a time. Filters are fields, not a BPF string.
 message PcapRequest { string iface = 1; string host = 2; uint32 port = 3; string proto = 4; uint32 seconds = 5; uint32 max_bytes = 6; }
+message WhoAmIRequest {}
+message WhoAmIResponse { string device = 1; string user = 2; string role = 3; string mode = 4; }   // mode: audit | enforce

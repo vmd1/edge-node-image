@@ -24,6 +24,7 @@ type Spec struct {
 	Sysctls              map[string]string `json:"sysctls,omitempty"`
 	ModuleLockdown       *bool             `json:"moduleLockdown,omitempty"`
 	TimeServers          []string          `json:"timeServers,omitempty"`
+	APIRoles             string            `json:"apiRoles,omitempty"` // audit (default) | enforce
 }
 
 type Kubelet struct {
@@ -73,6 +74,11 @@ func (s *Spec) Validate() error {
 	case "", "auto", "staged", "try":
 	default:
 		add("mode %q: want auto, staged or try", s.Mode)
+	}
+	switch s.APIRoles {
+	case "", "audit", "enforce":
+	default:
+		add("apiRoles %q: want audit or enforce", s.APIRoles)
 	}
 	if s.TryTimeoutSeconds < 0 || s.TryTimeoutSeconds > 3600 {
 		add("tryTimeoutSeconds %d: want 0..3600", s.TryTimeoutSeconds)
@@ -224,6 +230,9 @@ func Overlay(out *Spec, s Spec) {
 	}
 	if s.ModuleLockdown != nil {
 		out.ModuleLockdown = s.ModuleLockdown
+	}
+	if s.APIRoles != "" {
+		out.APIRoles = s.APIRoles
 	}
 	if len(s.TimeServers) > 0 {
 		out.TimeServers = append([]string(nil), s.TimeServers...)

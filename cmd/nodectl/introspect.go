@@ -25,6 +25,8 @@ const introUsage = `
   service  <node> status|start|stop|restart <unit>      allowlisted units only
   ls       <node> <path>            list an allowlisted directory (/var/log /run/edge /var/lib/edge /etc/rancher)
   read     <node> <path> [-n bytes] read an allowlisted file (never secrets); the tail if it is larger
+  whoami   <node>                   your role on the node (from the Tailscale grant)
+  audit    <node>                   who called what (the noded audit log)
   health   <node>|--all             the boot checks plus listeners and memory pressure
   support  <node>... [-o dir]       diagnostics bundle (tar.gz, encrypted with age if available)
   pcap     <node> [--iface I] [--host IP] [--port N] [--proto tcp|udp|icmp] [--seconds 30] [--max-bytes N] > file.pcap
@@ -123,6 +125,30 @@ func introspect(ctx context.Context, cmd, node string, cl pb.NodedClient, rest [
 		}
 		_, err = os.Stdout.Write(r.Data)
 		return true, err
+	case "whoami":
+		r, err := cl.WhoAmI(ctx, &pb.WhoAmIRequest{})
+		if err != nil {
+			return true, err
+		}
+		fmt.Printf("device %s\nuser   %s\nrole   %s (roles are %s on %s)\n", r.Device, r.User, r.Role, r.Mode, node)
+		return true, nil
+	case "audit":
+		st, err := cl.Logs(ctx, &pb.LogsRequest{Unit: "noded.service", TailLines: 2000})
+		if err != nil {
+			return true, err
+		}
+		for {
+			l, err := st.Recv()
+			if err == io.EOF {
+				return true, nil
+			}
+			if err != nil {
+				return true, err
+			}
+			if strings.Contains(l.Text, " audit id=") {
+				fmt.Println(l.Text)
+			}
+		}
 	case "health":
 		return true, health(ctx, node, cl)
 	case "pcap":
@@ -346,7 +372,7 @@ func (e *env) dashboard(ctx context.Context) error {
 	}
 }
 
-const verbs = "list status logs check stage update rollback reboot registry channel config get ps netstat dmesg events service ls read health support pcap dashboard verify completion debug"
+const verbs = "list status logs check stage update rollback reboot registry channel config get ps netstat dmesg events service ls read whoami audit health support pcap dashboard verify completion debug"
 
 func completion(shell string) error {
 	switch shell {

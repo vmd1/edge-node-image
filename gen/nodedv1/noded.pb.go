@@ -1981,6 +1981,110 @@ func (x *PcapRequest) GetMaxBytes() uint32 {
 	return 0
 }
 
+type WhoAmIRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WhoAmIRequest) Reset() {
+	*x = WhoAmIRequest{}
+	mi := &file_noded_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WhoAmIRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WhoAmIRequest) ProtoMessage() {}
+
+func (x *WhoAmIRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noded_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WhoAmIRequest.ProtoReflect.Descriptor instead.
+func (*WhoAmIRequest) Descriptor() ([]byte, []int) {
+	return file_noded_proto_rawDescGZIP(), []int{40}
+}
+
+type WhoAmIResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Device        string                 `protobuf:"bytes,1,opt,name=device,proto3" json:"device,omitempty"`
+	User          string                 `protobuf:"bytes,2,opt,name=user,proto3" json:"user,omitempty"`
+	Role          string                 `protobuf:"bytes,3,opt,name=role,proto3" json:"role,omitempty"`
+	Mode          string                 `protobuf:"bytes,4,opt,name=mode,proto3" json:"mode,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WhoAmIResponse) Reset() {
+	*x = WhoAmIResponse{}
+	mi := &file_noded_proto_msgTypes[41]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WhoAmIResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WhoAmIResponse) ProtoMessage() {}
+
+func (x *WhoAmIResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noded_proto_msgTypes[41]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WhoAmIResponse.ProtoReflect.Descriptor instead.
+func (*WhoAmIResponse) Descriptor() ([]byte, []int) {
+	return file_noded_proto_rawDescGZIP(), []int{41}
+}
+
+func (x *WhoAmIResponse) GetDevice() string {
+	if x != nil {
+		return x.Device
+	}
+	return ""
+}
+
+func (x *WhoAmIResponse) GetUser() string {
+	if x != nil {
+		return x.User
+	}
+	return ""
+}
+
+func (x *WhoAmIResponse) GetRole() string {
+	if x != nil {
+		return x.Role
+	}
+	return ""
+}
+
+func (x *WhoAmIResponse) GetMode() string {
+	if x != nil {
+		return x.Mode
+	}
+	return ""
+}
+
 var File_noded_proto protoreflect.FileDescriptor
 
 const file_noded_proto_rawDesc = "" +
@@ -2100,7 +2204,13 @@ const file_noded_proto_rawDesc = "" +
 	"\x04port\x18\x03 \x01(\rR\x04port\x12\x14\n" +
 	"\x05proto\x18\x04 \x01(\tR\x05proto\x12\x18\n" +
 	"\aseconds\x18\x05 \x01(\rR\aseconds\x12\x1b\n" +
-	"\tmax_bytes\x18\x06 \x01(\rR\bmaxBytes2\x9a\f\n" +
+	"\tmax_bytes\x18\x06 \x01(\rR\bmaxBytes\"\x0f\n" +
+	"\rWhoAmIRequest\"d\n" +
+	"\x0eWhoAmIResponse\x12\x16\n" +
+	"\x06device\x18\x01 \x01(\tR\x06device\x12\x12\n" +
+	"\x04user\x18\x02 \x01(\tR\x04user\x12\x12\n" +
+	"\x04role\x18\x03 \x01(\tR\x04role\x12\x12\n" +
+	"\x04mode\x18\x04 \x01(\tR\x04mode2\xd7\f\n" +
 	"\x05Noded\x12;\n" +
 	"\x06Status\x12\x17.noded.v1.StatusRequest\x1a\x18.noded.v1.StatusResponse\x122\n" +
 	"\x04Logs\x12\x15.noded.v1.LogsRequest\x1a\x11.noded.v1.LogLine0\x01\x12J\n" +
@@ -2123,7 +2233,8 @@ const file_noded_proto_rawDesc = "" +
 	"\x06Health\x12\x17.noded.v1.HealthRequest\x1a\x18.noded.v1.HealthResponse\x126\n" +
 	"\x06Events\x12\x17.noded.v1.EventsRequest\x1a\x11.noded.v1.LogLine0\x01\x126\n" +
 	"\aSupport\x12\x18.noded.v1.SupportRequest\x1a\x0f.noded.v1.Chunk0\x01\x120\n" +
-	"\x04Pcap\x12\x15.noded.v1.PcapRequest\x1a\x0f.noded.v1.Chunk0\x01B-Z+github.com/vmd1/edge-node-image/gen/nodedv1b\x06proto3"
+	"\x04Pcap\x12\x15.noded.v1.PcapRequest\x1a\x0f.noded.v1.Chunk0\x01\x12;\n" +
+	"\x06WhoAmI\x12\x17.noded.v1.WhoAmIRequest\x1a\x18.noded.v1.WhoAmIResponseB-Z+github.com/vmd1/edge-node-image/gen/nodedv1b\x06proto3"
 
 var (
 	file_noded_proto_rawDescOnce sync.Once
@@ -2137,7 +2248,7 @@ func file_noded_proto_rawDescGZIP() []byte {
 	return file_noded_proto_rawDescData
 }
 
-var file_noded_proto_msgTypes = make([]protoimpl.MessageInfo, 41)
+var file_noded_proto_msgTypes = make([]protoimpl.MessageInfo, 43)
 var file_noded_proto_goTypes = []any{
 	(*StatusRequest)(nil),               // 0: noded.v1.StatusRequest
 	(*StatusResponse)(nil),              // 1: noded.v1.StatusResponse
@@ -2179,10 +2290,12 @@ var file_noded_proto_goTypes = []any{
 	(*SupportRequest)(nil),              // 37: noded.v1.SupportRequest
 	(*Chunk)(nil),                       // 38: noded.v1.Chunk
 	(*PcapRequest)(nil),                 // 39: noded.v1.PcapRequest
-	nil,                                 // 40: noded.v1.StatusResponse.UnitsEntry
+	(*WhoAmIRequest)(nil),               // 40: noded.v1.WhoAmIRequest
+	(*WhoAmIResponse)(nil),              // 41: noded.v1.WhoAmIResponse
+	nil,                                 // 42: noded.v1.StatusResponse.UnitsEntry
 }
 var file_noded_proto_depIdxs = []int32{
-	40, // 0: noded.v1.StatusResponse.units:type_name -> noded.v1.StatusResponse.UnitsEntry
+	42, // 0: noded.v1.StatusResponse.units:type_name -> noded.v1.StatusResponse.UnitsEntry
 	0,  // 1: noded.v1.Noded.Status:input_type -> noded.v1.StatusRequest
 	2,  // 2: noded.v1.Noded.Logs:input_type -> noded.v1.LogsRequest
 	4,  // 3: noded.v1.Noded.CheckUpdate:input_type -> noded.v1.CheckUpdateRequest
@@ -2205,30 +2318,32 @@ var file_noded_proto_depIdxs = []int32{
 	36, // 20: noded.v1.Noded.Events:input_type -> noded.v1.EventsRequest
 	37, // 21: noded.v1.Noded.Support:input_type -> noded.v1.SupportRequest
 	39, // 22: noded.v1.Noded.Pcap:input_type -> noded.v1.PcapRequest
-	1,  // 23: noded.v1.Noded.Status:output_type -> noded.v1.StatusResponse
-	3,  // 24: noded.v1.Noded.Logs:output_type -> noded.v1.LogLine
-	5,  // 25: noded.v1.Noded.CheckUpdate:output_type -> noded.v1.CheckUpdateResponse
-	7,  // 26: noded.v1.Noded.StageUpdate:output_type -> noded.v1.StageUpdateResponse
-	9,  // 27: noded.v1.Noded.GetUpdateConfig:output_type -> noded.v1.UpdateConfig
-	10, // 28: noded.v1.Noded.SetUpdateConfig:output_type -> noded.v1.SetUpdateConfigResponse
-	12, // 29: noded.v1.Noded.Reboot:output_type -> noded.v1.RebootResponse
-	14, // 30: noded.v1.Noded.SetBootSlot:output_type -> noded.v1.SetBootSlotResponse
-	16, // 31: noded.v1.Noded.GetRegistryConfig:output_type -> noded.v1.RegistryConfig
-	17, // 32: noded.v1.Noded.SetRegistryConfig:output_type -> noded.v1.SetRegistryConfigResponse
-	19, // 33: noded.v1.Noded.GetConfig:output_type -> noded.v1.ConfigState
-	21, // 34: noded.v1.Noded.ValidateConfig:output_type -> noded.v1.ValidateConfigResponse
-	23, // 35: noded.v1.Noded.SetConfigOverride:output_type -> noded.v1.SetConfigOverrideResponse
-	25, // 36: noded.v1.Noded.ClearConfigOverride:output_type -> noded.v1.ClearConfigOverrideResponse
-	27, // 37: noded.v1.Noded.Inspect:output_type -> noded.v1.InspectResponse
-	29, // 38: noded.v1.Noded.ListFiles:output_type -> noded.v1.ListFilesResponse
-	31, // 39: noded.v1.Noded.ReadFile:output_type -> noded.v1.ReadFileResponse
-	33, // 40: noded.v1.Noded.Service:output_type -> noded.v1.ServiceResponse
-	35, // 41: noded.v1.Noded.Health:output_type -> noded.v1.HealthResponse
-	3,  // 42: noded.v1.Noded.Events:output_type -> noded.v1.LogLine
-	38, // 43: noded.v1.Noded.Support:output_type -> noded.v1.Chunk
-	38, // 44: noded.v1.Noded.Pcap:output_type -> noded.v1.Chunk
-	23, // [23:45] is the sub-list for method output_type
-	1,  // [1:23] is the sub-list for method input_type
+	40, // 23: noded.v1.Noded.WhoAmI:input_type -> noded.v1.WhoAmIRequest
+	1,  // 24: noded.v1.Noded.Status:output_type -> noded.v1.StatusResponse
+	3,  // 25: noded.v1.Noded.Logs:output_type -> noded.v1.LogLine
+	5,  // 26: noded.v1.Noded.CheckUpdate:output_type -> noded.v1.CheckUpdateResponse
+	7,  // 27: noded.v1.Noded.StageUpdate:output_type -> noded.v1.StageUpdateResponse
+	9,  // 28: noded.v1.Noded.GetUpdateConfig:output_type -> noded.v1.UpdateConfig
+	10, // 29: noded.v1.Noded.SetUpdateConfig:output_type -> noded.v1.SetUpdateConfigResponse
+	12, // 30: noded.v1.Noded.Reboot:output_type -> noded.v1.RebootResponse
+	14, // 31: noded.v1.Noded.SetBootSlot:output_type -> noded.v1.SetBootSlotResponse
+	16, // 32: noded.v1.Noded.GetRegistryConfig:output_type -> noded.v1.RegistryConfig
+	17, // 33: noded.v1.Noded.SetRegistryConfig:output_type -> noded.v1.SetRegistryConfigResponse
+	19, // 34: noded.v1.Noded.GetConfig:output_type -> noded.v1.ConfigState
+	21, // 35: noded.v1.Noded.ValidateConfig:output_type -> noded.v1.ValidateConfigResponse
+	23, // 36: noded.v1.Noded.SetConfigOverride:output_type -> noded.v1.SetConfigOverrideResponse
+	25, // 37: noded.v1.Noded.ClearConfigOverride:output_type -> noded.v1.ClearConfigOverrideResponse
+	27, // 38: noded.v1.Noded.Inspect:output_type -> noded.v1.InspectResponse
+	29, // 39: noded.v1.Noded.ListFiles:output_type -> noded.v1.ListFilesResponse
+	31, // 40: noded.v1.Noded.ReadFile:output_type -> noded.v1.ReadFileResponse
+	33, // 41: noded.v1.Noded.Service:output_type -> noded.v1.ServiceResponse
+	35, // 42: noded.v1.Noded.Health:output_type -> noded.v1.HealthResponse
+	3,  // 43: noded.v1.Noded.Events:output_type -> noded.v1.LogLine
+	38, // 44: noded.v1.Noded.Support:output_type -> noded.v1.Chunk
+	38, // 45: noded.v1.Noded.Pcap:output_type -> noded.v1.Chunk
+	41, // 46: noded.v1.Noded.WhoAmI:output_type -> noded.v1.WhoAmIResponse
+	24, // [24:47] is the sub-list for method output_type
+	1,  // [1:24] is the sub-list for method input_type
 	1,  // [1:1] is the sub-list for extension type_name
 	1,  // [1:1] is the sub-list for extension extendee
 	0,  // [0:1] is the sub-list for field type_name
@@ -2245,7 +2360,7 @@ func file_noded_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_noded_proto_rawDesc), len(file_noded_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   41,
+			NumMessages:   43,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

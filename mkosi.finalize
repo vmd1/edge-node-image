@@ -37,3 +37,22 @@ for kdir in */; do
   mkosi-chroot depmod -a "$kdir"
   echo "modules $kdir: ${before}M -> $(du -sm "$k" | cut -f1)M, $(find "$k" -name '*.ko*' | wc -l) files"
 done
+
+# ---- Phase 1.A: remove what a headless node never needs and attackers would use -------------------------------------------
+# Keep a record of what was installed (the SBOM reads /var/lib/dpkg/status, which stays; this file is for people on the node).
+install -d "$BUILDROOT/usr/share/edge"
+mkosi-chroot dpkg-query -W -f='${Package} ${Version}\n' > "$BUILDROOT/usr/share/edge/packages.txt" || true
+cd "$BUILDROOT"
+# no package manager on a read-only image: updates are whole-image A/B
+rm -f usr/bin/dpkg usr/bin/dpkg-deb usr/bin/dpkg-query usr/bin/dpkg-split usr/bin/dpkg-divert usr/bin/dpkg-statoverride \
+      usr/bin/dpkg-trigger usr/bin/dpkg-realpath usr/bin/dpkg-maintscript-helper usr/sbin/dpkg-preconfigure \
+      usr/bin/apt usr/bin/apt-get usr/bin/apt-cache usr/bin/apt-config usr/bin/apt-mark usr/bin/apt-cdrom usr/bin/apt-key \
+      usr/bin/update-alternatives usr/sbin/update-ca-certificates.dpkg-new
+rm -rf usr/lib/apt usr/lib/dpkg usr/share/dpkg etc/apt var/cache/apt
+# no perl, no bash: every script in the image is POSIX sh (/bin/sh is dash)
+rm -rf usr/bin/perl usr/bin/perl5* usr/lib/*/perl* usr/lib/*/perl-base usr/share/perl* usr/share/perl5 usr/bin/bash usr/bin/rbash bin/bash bin/rbash
+# no setuid or setgid files at all: nobody logs in, nothing needs to elevate (su, mount, umount, passwd, polkit helpers, wall, write)
+find . -xdev -type f \( -perm -4000 -o -perm -2000 \) -exec chmod ug-s {} +
+# the build's own sanity check: the image must not contain any of the above
+for f in usr/bin/bash usr/bin/perl usr/bin/dpkg usr/bin/apt; do [ ! -e "$f" ] || { echo "finalize: $f is still present" >&2; exit 1; }; done
+[ -z "$(find . -xdev -type f \( -perm -4000 -o -perm -2000 \) | head -1)" ] || { echo "finalize: setuid/setgid files remain" >&2; exit 1; }

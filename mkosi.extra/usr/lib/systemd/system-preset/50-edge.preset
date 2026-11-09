@@ -10,3 +10,4 @@ enable systemd-timesyncd.service
 disable systemd-sysupdate.timer
 disable systemd-sysupdate-reboot.timer
 disable systemd-resolved.service
+enable edge-lock-modules.service

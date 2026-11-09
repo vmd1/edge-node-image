@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/bin/sh
 # Runs on every boot, idempotent. Turns instance metadata (or a pre-seeded /var/lib/edge/bootstrap.env) into the node's
 # runtime config: node name, Tailscale login, noded allowlist, k3s join settings. Secrets live only under /var (0600).
-set -euo pipefail
+set -eu
 V=/var/lib/edge; R=/run/edge
 install -d -m 0755 "$V" "$R"
 env_file="$V/bootstrap.env"
@@ -16,6 +16,7 @@ for i in $(seq 1 $tries); do
   sleep 2
 done
 if [ -n "$imds" ]; then
+  printf '%s' "$imds" | jq -e . >/dev/null || { echo "firstboot: instance metadata is not valid JSON" >&2; exit 1; }   # no pipefail in sh
   umask 077
   {
     echo "NODE_NAME=$(printf '%s' "$imds" | jq -r '.displayName')"
@@ -26,6 +27,7 @@ elif [ ! -s "$env_file" ]; then
   echo "firstboot: no metadata and no bootstrap.env; nothing to configure" >&2; exit 1
 fi
 
+# shellcheck source=/dev/null
 set -a; . "$env_file"; set +a
 umask 077
 : "${NODE_NAME:?NODE_NAME missing from bootstrap}"

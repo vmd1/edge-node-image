@@ -31,6 +31,9 @@ const usage = `usage: nodectl [--addr host:port] [--no-kube] [--yes] <command> [
   reboot   <node>                   drain, reboot, wait, uncordon                     (needs --yes)
   registry <node> show|set [--mirror URL] [--fallback URL]
   channel  <node> show|set <url>|reset   update source (https release directory)
+  rollout  [version] [--canary N] [--settle 10m] [--from N] [--config]   rolling update with health gates (needs --yes)
+  reset    <node> [--wipe k3s|all-var] [--keep-node-object] [--force] [--confirm N]   wipe /var, back to first boot (needs --yes)
+  hard-reset <node> [--timeout 10m]   ask the platform adapter to power cycle it (needs --yes; for an unreachable noded)
   config   <node> show|validate -f F|diff -f F|set -f F [--ttl 4h]|clear   declarative node config
   debug    <node>                   kubectl debug node/<node>
 
@@ -107,6 +110,8 @@ func run(ctx context.Context, e *env, args []string) error {
 		return completion(rest[0])
 	case "support":
 		return e.support(ctx, rest)
+	case "rollout":
+		return e.rollout(ctx, rest)
 	case "health":
 		if len(rest) > 0 && rest[0] == "--all" {
 			return e.fleetHealth(ctx)
@@ -132,6 +137,12 @@ func run(ctx context.Context, e *env, args []string) error {
 	cctx, cancel := context.WithTimeout(ctx, 15*time.Minute)
 	defer cancel()
 
+	switch cmd {
+	case "reset":
+		return e.reset(ctx, node, cl, rest)
+	case "hard-reset":
+		return e.hardReset(ctx, node, rest)
+	}
 	if handled, err := introspect(cctx, cmd, node, cl, rest); handled {
 		return err
 	}
@@ -330,10 +341,14 @@ func rollback(ctx context.Context, e *env, cl pb.NodedClient, node, version stri
 	if _, err := cl.SetBootSlot(ctx, &pb.SetBootSlotRequest{Version: version, OneShot: true}); err != nil {
 		return err
 	}
-	return cycle(ctx, e, cl, node, "rollback", func(ctx context.Context) error {
+	if err := cycle(ctx, e, cl, node, "rollback", func(ctx context.Context) error {
 		_, err := cl.Reboot(ctx, &pb.RebootRequest{})
 		return err
-	})
+	}); err != nil {
+		return err
+	}
+	// the wait is built in (cycle); the health gate makes rollback usable as the abort path of a rollout
+	return health(ctx, node, cl)
 }
 
 // cycle drains, reboots through fn, waits for the agent to return with a smaller uptime, then uncordons.

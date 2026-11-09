@@ -2085,6 +2085,162 @@ func (x *WhoAmIResponse) GetMode() string {
 	return ""
 }
 
+type ResetRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Wipe          string                 `protobuf:"bytes,1,opt,name=wipe,proto3" json:"wipe,omitempty"`      // "k3s" (default: delete k3s/kubelet/containerd state, keep Tailscale identity and node password) or "all-var"
+	Reboot        bool                   `protobuf:"varint,2,opt,name=reboot,proto3" json:"reboot,omitempty"` // false: stop after the wipe, for inspection (k3s stays stopped; ignored for all-var, which always reboots)
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResetRequest) Reset() {
+	*x = ResetRequest{}
+	mi := &file_noded_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResetRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResetRequest) ProtoMessage() {}
+
+func (x *ResetRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noded_proto_msgTypes[42]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResetRequest.ProtoReflect.Descriptor instead.
+func (*ResetRequest) Descriptor() ([]byte, []int) {
+	return file_noded_proto_rawDescGZIP(), []int{42}
+}
+
+func (x *ResetRequest) GetWipe() string {
+	if x != nil {
+		return x.Wipe
+	}
+	return ""
+}
+
+func (x *ResetRequest) GetReboot() bool {
+	if x != nil {
+		return x.Reboot
+	}
+	return false
+}
+
+type ResetPreflightResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+	Detail        string                 `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResetPreflightResponse) Reset() {
+	*x = ResetPreflightResponse{}
+	mi := &file_noded_proto_msgTypes[43]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResetPreflightResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResetPreflightResponse) ProtoMessage() {}
+
+func (x *ResetPreflightResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noded_proto_msgTypes[43]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResetPreflightResponse.ProtoReflect.Descriptor instead.
+func (*ResetPreflightResponse) Descriptor() ([]byte, []int) {
+	return file_noded_proto_rawDescGZIP(), []int{43}
+}
+
+func (x *ResetPreflightResponse) GetOk() bool {
+	if x != nil {
+		return x.Ok
+	}
+	return false
+}
+
+func (x *ResetPreflightResponse) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
+}
+
+type ResetResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Removed       []string               `protobuf:"bytes,1,rep,name=removed,proto3" json:"removed,omitempty"`
+	Rebooting     bool                   `protobuf:"varint,2,opt,name=rebooting,proto3" json:"rebooting,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResetResponse) Reset() {
+	*x = ResetResponse{}
+	mi := &file_noded_proto_msgTypes[44]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResetResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResetResponse) ProtoMessage() {}
+
+func (x *ResetResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noded_proto_msgTypes[44]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResetResponse.ProtoReflect.Descriptor instead.
+func (*ResetResponse) Descriptor() ([]byte, []int) {
+	return file_noded_proto_rawDescGZIP(), []int{44}
+}
+
+func (x *ResetResponse) GetRemoved() []string {
+	if x != nil {
+		return x.Removed
+	}
+	return nil
+}
+
+func (x *ResetResponse) GetRebooting() bool {
+	if x != nil {
+		return x.Rebooting
+	}
+	return false
+}
+
 var File_noded_proto protoreflect.FileDescriptor
 
 const file_noded_proto_rawDesc = "" +
@@ -2210,7 +2366,16 @@ const file_noded_proto_rawDesc = "" +
 	"\x06device\x18\x01 \x01(\tR\x06device\x12\x12\n" +
 	"\x04user\x18\x02 \x01(\tR\x04user\x12\x12\n" +
 	"\x04role\x18\x03 \x01(\tR\x04role\x12\x12\n" +
-	"\x04mode\x18\x04 \x01(\tR\x04mode2\xd7\f\n" +
+	"\x04mode\x18\x04 \x01(\tR\x04mode\":\n" +
+	"\fResetRequest\x12\x12\n" +
+	"\x04wipe\x18\x01 \x01(\tR\x04wipe\x12\x16\n" +
+	"\x06reboot\x18\x02 \x01(\bR\x06reboot\"@\n" +
+	"\x16ResetPreflightResponse\x12\x0e\n" +
+	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x16\n" +
+	"\x06detail\x18\x02 \x01(\tR\x06detail\"G\n" +
+	"\rResetResponse\x12\x18\n" +
+	"\aremoved\x18\x01 \x03(\tR\aremoved\x12\x1c\n" +
+	"\trebooting\x18\x02 \x01(\bR\trebooting2\xdd\r\n" +
 	"\x05Noded\x12;\n" +
 	"\x06Status\x12\x17.noded.v1.StatusRequest\x1a\x18.noded.v1.StatusResponse\x122\n" +
 	"\x04Logs\x12\x15.noded.v1.LogsRequest\x1a\x11.noded.v1.LogLine0\x01\x12J\n" +
@@ -2234,7 +2399,9 @@ const file_noded_proto_rawDesc = "" +
 	"\x06Events\x12\x17.noded.v1.EventsRequest\x1a\x11.noded.v1.LogLine0\x01\x126\n" +
 	"\aSupport\x12\x18.noded.v1.SupportRequest\x1a\x0f.noded.v1.Chunk0\x01\x120\n" +
 	"\x04Pcap\x12\x15.noded.v1.PcapRequest\x1a\x0f.noded.v1.Chunk0\x01\x12;\n" +
-	"\x06WhoAmI\x12\x17.noded.v1.WhoAmIRequest\x1a\x18.noded.v1.WhoAmIResponseB-Z+github.com/vmd1/edge-node-image/gen/nodedv1b\x06proto3"
+	"\x06WhoAmI\x12\x17.noded.v1.WhoAmIRequest\x1a\x18.noded.v1.WhoAmIResponse\x12J\n" +
+	"\x0eResetPreflight\x12\x16.noded.v1.ResetRequest\x1a .noded.v1.ResetPreflightResponse\x128\n" +
+	"\x05Reset\x12\x16.noded.v1.ResetRequest\x1a\x17.noded.v1.ResetResponseB-Z+github.com/vmd1/edge-node-image/gen/nodedv1b\x06proto3"
 
 var (
 	file_noded_proto_rawDescOnce sync.Once
@@ -2248,7 +2415,7 @@ func file_noded_proto_rawDescGZIP() []byte {
 	return file_noded_proto_rawDescData
 }
 
-var file_noded_proto_msgTypes = make([]protoimpl.MessageInfo, 43)
+var file_noded_proto_msgTypes = make([]protoimpl.MessageInfo, 46)
 var file_noded_proto_goTypes = []any{
 	(*StatusRequest)(nil),               // 0: noded.v1.StatusRequest
 	(*StatusResponse)(nil),              // 1: noded.v1.StatusResponse
@@ -2292,10 +2459,13 @@ var file_noded_proto_goTypes = []any{
 	(*PcapRequest)(nil),                 // 39: noded.v1.PcapRequest
 	(*WhoAmIRequest)(nil),               // 40: noded.v1.WhoAmIRequest
 	(*WhoAmIResponse)(nil),              // 41: noded.v1.WhoAmIResponse
-	nil,                                 // 42: noded.v1.StatusResponse.UnitsEntry
+	(*ResetRequest)(nil),                // 42: noded.v1.ResetRequest
+	(*ResetPreflightResponse)(nil),      // 43: noded.v1.ResetPreflightResponse
+	(*ResetResponse)(nil),               // 44: noded.v1.ResetResponse
+	nil,                                 // 45: noded.v1.StatusResponse.UnitsEntry
 }
 var file_noded_proto_depIdxs = []int32{
-	42, // 0: noded.v1.StatusResponse.units:type_name -> noded.v1.StatusResponse.UnitsEntry
+	45, // 0: noded.v1.StatusResponse.units:type_name -> noded.v1.StatusResponse.UnitsEntry
 	0,  // 1: noded.v1.Noded.Status:input_type -> noded.v1.StatusRequest
 	2,  // 2: noded.v1.Noded.Logs:input_type -> noded.v1.LogsRequest
 	4,  // 3: noded.v1.Noded.CheckUpdate:input_type -> noded.v1.CheckUpdateRequest
@@ -2319,31 +2489,35 @@ var file_noded_proto_depIdxs = []int32{
 	37, // 21: noded.v1.Noded.Support:input_type -> noded.v1.SupportRequest
 	39, // 22: noded.v1.Noded.Pcap:input_type -> noded.v1.PcapRequest
 	40, // 23: noded.v1.Noded.WhoAmI:input_type -> noded.v1.WhoAmIRequest
-	1,  // 24: noded.v1.Noded.Status:output_type -> noded.v1.StatusResponse
-	3,  // 25: noded.v1.Noded.Logs:output_type -> noded.v1.LogLine
-	5,  // 26: noded.v1.Noded.CheckUpdate:output_type -> noded.v1.CheckUpdateResponse
-	7,  // 27: noded.v1.Noded.StageUpdate:output_type -> noded.v1.StageUpdateResponse
-	9,  // 28: noded.v1.Noded.GetUpdateConfig:output_type -> noded.v1.UpdateConfig
-	10, // 29: noded.v1.Noded.SetUpdateConfig:output_type -> noded.v1.SetUpdateConfigResponse
-	12, // 30: noded.v1.Noded.Reboot:output_type -> noded.v1.RebootResponse
-	14, // 31: noded.v1.Noded.SetBootSlot:output_type -> noded.v1.SetBootSlotResponse
-	16, // 32: noded.v1.Noded.GetRegistryConfig:output_type -> noded.v1.RegistryConfig
-	17, // 33: noded.v1.Noded.SetRegistryConfig:output_type -> noded.v1.SetRegistryConfigResponse
-	19, // 34: noded.v1.Noded.GetConfig:output_type -> noded.v1.ConfigState
-	21, // 35: noded.v1.Noded.ValidateConfig:output_type -> noded.v1.ValidateConfigResponse
-	23, // 36: noded.v1.Noded.SetConfigOverride:output_type -> noded.v1.SetConfigOverrideResponse
-	25, // 37: noded.v1.Noded.ClearConfigOverride:output_type -> noded.v1.ClearConfigOverrideResponse
-	27, // 38: noded.v1.Noded.Inspect:output_type -> noded.v1.InspectResponse
-	29, // 39: noded.v1.Noded.ListFiles:output_type -> noded.v1.ListFilesResponse
-	31, // 40: noded.v1.Noded.ReadFile:output_type -> noded.v1.ReadFileResponse
-	33, // 41: noded.v1.Noded.Service:output_type -> noded.v1.ServiceResponse
-	35, // 42: noded.v1.Noded.Health:output_type -> noded.v1.HealthResponse
-	3,  // 43: noded.v1.Noded.Events:output_type -> noded.v1.LogLine
-	38, // 44: noded.v1.Noded.Support:output_type -> noded.v1.Chunk
-	38, // 45: noded.v1.Noded.Pcap:output_type -> noded.v1.Chunk
-	41, // 46: noded.v1.Noded.WhoAmI:output_type -> noded.v1.WhoAmIResponse
-	24, // [24:47] is the sub-list for method output_type
-	1,  // [1:24] is the sub-list for method input_type
+	42, // 24: noded.v1.Noded.ResetPreflight:input_type -> noded.v1.ResetRequest
+	42, // 25: noded.v1.Noded.Reset:input_type -> noded.v1.ResetRequest
+	1,  // 26: noded.v1.Noded.Status:output_type -> noded.v1.StatusResponse
+	3,  // 27: noded.v1.Noded.Logs:output_type -> noded.v1.LogLine
+	5,  // 28: noded.v1.Noded.CheckUpdate:output_type -> noded.v1.CheckUpdateResponse
+	7,  // 29: noded.v1.Noded.StageUpdate:output_type -> noded.v1.StageUpdateResponse
+	9,  // 30: noded.v1.Noded.GetUpdateConfig:output_type -> noded.v1.UpdateConfig
+	10, // 31: noded.v1.Noded.SetUpdateConfig:output_type -> noded.v1.SetUpdateConfigResponse
+	12, // 32: noded.v1.Noded.Reboot:output_type -> noded.v1.RebootResponse
+	14, // 33: noded.v1.Noded.SetBootSlot:output_type -> noded.v1.SetBootSlotResponse
+	16, // 34: noded.v1.Noded.GetRegistryConfig:output_type -> noded.v1.RegistryConfig
+	17, // 35: noded.v1.Noded.SetRegistryConfig:output_type -> noded.v1.SetRegistryConfigResponse
+	19, // 36: noded.v1.Noded.GetConfig:output_type -> noded.v1.ConfigState
+	21, // 37: noded.v1.Noded.ValidateConfig:output_type -> noded.v1.ValidateConfigResponse
+	23, // 38: noded.v1.Noded.SetConfigOverride:output_type -> noded.v1.SetConfigOverrideResponse
+	25, // 39: noded.v1.Noded.ClearConfigOverride:output_type -> noded.v1.ClearConfigOverrideResponse
+	27, // 40: noded.v1.Noded.Inspect:output_type -> noded.v1.InspectResponse
+	29, // 41: noded.v1.Noded.ListFiles:output_type -> noded.v1.ListFilesResponse
+	31, // 42: noded.v1.Noded.ReadFile:output_type -> noded.v1.ReadFileResponse
+	33, // 43: noded.v1.Noded.Service:output_type -> noded.v1.ServiceResponse
+	35, // 44: noded.v1.Noded.Health:output_type -> noded.v1.HealthResponse
+	3,  // 45: noded.v1.Noded.Events:output_type -> noded.v1.LogLine
+	38, // 46: noded.v1.Noded.Support:output_type -> noded.v1.Chunk
+	38, // 47: noded.v1.Noded.Pcap:output_type -> noded.v1.Chunk
+	41, // 48: noded.v1.Noded.WhoAmI:output_type -> noded.v1.WhoAmIResponse
+	43, // 49: noded.v1.Noded.ResetPreflight:output_type -> noded.v1.ResetPreflightResponse
+	44, // 50: noded.v1.Noded.Reset:output_type -> noded.v1.ResetResponse
+	26, // [26:51] is the sub-list for method output_type
+	1,  // [1:26] is the sub-list for method input_type
 	1,  // [1:1] is the sub-list for extension type_name
 	1,  // [1:1] is the sub-list for extension extendee
 	0,  // [0:1] is the sub-list for field type_name
@@ -2360,7 +2534,7 @@ func file_noded_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_noded_proto_rawDesc), len(file_noded_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   43,
+			NumMessages:   46,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

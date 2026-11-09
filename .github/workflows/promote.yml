@@ -1,0 +1,41 @@
+name: promote
+# Copy the current candidate-<arch> release to stable-<arch> (the channel every node follows). Run after the canary has soaked.
+on:
+  workflow_dispatch:
+    inputs:
+      arch:
+        description: "architecture"
+        required: true
+        default: "amd64"
+      confirm:
+        description: "type the version found in candidate SHA256SUMS (for example 0.3.0) to confirm"
+        required: true
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: download the candidate
+        run: |
+          mkdir cand && cd cand
+          gh release download "candidate-${{ inputs.arch }}" -R "$GITHUB_REPOSITORY"
+          ls
+          grep -q "_${{ inputs.confirm }}[._]" SHA256SUMS || { echo "the candidate is not version ${{ inputs.confirm }}"; cat SHA256SUMS; exit 1; }
+      - name: verify the signature before promoting
+        run: |
+          cd cand
+          test -s ../signing/edge-node-image.pub.gpg 2>/dev/null || gh api "repos/$GITHUB_REPOSITORY/contents/signing/edge-node-image.pub.gpg" -H "Accept: application/vnd.github.raw" > pub.gpg
+          gpg --batch --import pub.gpg 2>/dev/null || gpg --batch --import ../signing/edge-node-image.pub.gpg
+          gpg --batch --verify SHA256SUMS.gpg SHA256SUMS
+          sha256sum -c SHA256SUMS
+      - name: publish to stable
+        run: |
+          tag="stable-${{ inputs.arch }}"
+          cd cand
+          gh release view "$tag" >/dev/null 2>&1 || gh release create "$tag" --title "$tag" --notes "Rolling channel followed by nodes. Do not download by hand." --prerelease
+          gh release upload "$tag" --clobber $(ls | grep -v -E '^(SHA256SUMS|pub.gpg)') SHA256SUMS SHA256SUMS.gpg
+          for a in $(gh release view "$tag" --json assets --jq '.assets[].name'); do [ -e "$a" ] || gh release delete-asset "$tag" "$a" --yes; done

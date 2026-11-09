@@ -32,6 +32,9 @@ service Noded {
   rpc Support(SupportRequest) returns (stream Chunk);
   rpc Pcap(PcapRequest) returns (stream Chunk);
   rpc WhoAmI(WhoAmIRequest) returns (WhoAmIResponse);
+  // Wipe writable state and return the node to a first-boot state (the signed image and A/B slots are untouched).
+  rpc ResetPreflight(ResetRequest) returns (ResetPreflightResponse);
+  rpc Reset(ResetRequest) returns (ResetResponse);
 }
 
 message StatusRequest {}
@@ -118,3 +121,10 @@ message Chunk { bytes data = 1; }
 message PcapRequest { string iface = 1; string host = 2; uint32 port = 3; string proto = 4; uint32 seconds = 5; uint32 max_bytes = 6; }
 message WhoAmIRequest {}
 message WhoAmIResponse { string device = 1; string user = 2; string role = 3; string mode = 4; }   // mode: audit | enforce
+
+message ResetRequest {
+  string wipe = 1;     // "k3s" (default: delete k3s/kubelet/containerd state, keep Tailscale identity and node password) or "all-var"
+  bool reboot = 2;     // false: stop after the wipe, for inspection (k3s stays stopped; ignored for all-var, which always reboots)
+}
+message ResetPreflightResponse { bool ok = 1; string detail = 2; }   // all-var: can first boot re-provision from instance metadata?
+message ResetResponse { repeated string removed = 1; bool rebooting = 2; }

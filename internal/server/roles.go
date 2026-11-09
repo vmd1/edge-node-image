@@ -24,7 +24,7 @@ var methodRoles = map[string]auth.Role{
 	"SetConfigOverride": auth.RoleOperator, "ClearConfigOverride": auth.RoleOperator,
 	"SetUpdateConfig": auth.RoleAdmin, "SetRegistryConfig": auth.RoleAdmin,
 	// Service: status is a read, start/stop/restart need operator (see RequiredRole)
-	"Service": auth.RoleOperator,
+	"Service": auth.RoleOperator, "Reset": auth.RoleOperator, "ResetPreflight": auth.RoleReader,
 }
 
 func baseName(full string) string {
@@ -42,6 +42,11 @@ func RequiredRole(fullMethod string, req any) auth.Role {
 	if name == "Service" {
 		if r, ok := req.(*pb.ServiceRequest); ok && r.Action == "status" {
 			return auth.RoleReader
+		}
+	}
+	if name == "Reset" {
+		if r, ok := req.(*pb.ResetRequest); ok && r.Wipe == "all-var" {
+			return auth.RoleAdmin // a factory reset beats operator
 		}
 	}
 	if r, ok := methodRoles[name]; ok {

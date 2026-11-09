@@ -45,6 +45,8 @@ const (
 	Noded_Support_FullMethodName             = "/noded.v1.Noded/Support"
 	Noded_Pcap_FullMethodName                = "/noded.v1.Noded/Pcap"
 	Noded_WhoAmI_FullMethodName              = "/noded.v1.Noded/WhoAmI"
+	Noded_ResetPreflight_FullMethodName      = "/noded.v1.Noded/ResetPreflight"
+	Noded_Reset_FullMethodName               = "/noded.v1.Noded/Reset"
 )
 
 // NodedClient is the client API for Noded service.
@@ -76,6 +78,9 @@ type NodedClient interface {
 	Support(ctx context.Context, in *SupportRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Chunk], error)
 	Pcap(ctx context.Context, in *PcapRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Chunk], error)
 	WhoAmI(ctx context.Context, in *WhoAmIRequest, opts ...grpc.CallOption) (*WhoAmIResponse, error)
+	// Wipe writable state and return the node to a first-boot state (the signed image and A/B slots are untouched).
+	ResetPreflight(ctx context.Context, in *ResetRequest, opts ...grpc.CallOption) (*ResetPreflightResponse, error)
+	Reset(ctx context.Context, in *ResetRequest, opts ...grpc.CallOption) (*ResetResponse, error)
 }
 
 type nodedClient struct {
@@ -352,6 +357,26 @@ func (c *nodedClient) WhoAmI(ctx context.Context, in *WhoAmIRequest, opts ...grp
 	return out, nil
 }
 
+func (c *nodedClient) ResetPreflight(ctx context.Context, in *ResetRequest, opts ...grpc.CallOption) (*ResetPreflightResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResetPreflightResponse)
+	err := c.cc.Invoke(ctx, Noded_ResetPreflight_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodedClient) Reset(ctx context.Context, in *ResetRequest, opts ...grpc.CallOption) (*ResetResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResetResponse)
+	err := c.cc.Invoke(ctx, Noded_Reset_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // NodedServer is the server API for Noded service.
 // All implementations must embed UnimplementedNodedServer
 // for forward compatibility.
@@ -381,6 +406,9 @@ type NodedServer interface {
 	Support(*SupportRequest, grpc.ServerStreamingServer[Chunk]) error
 	Pcap(*PcapRequest, grpc.ServerStreamingServer[Chunk]) error
 	WhoAmI(context.Context, *WhoAmIRequest) (*WhoAmIResponse, error)
+	// Wipe writable state and return the node to a first-boot state (the signed image and A/B slots are untouched).
+	ResetPreflight(context.Context, *ResetRequest) (*ResetPreflightResponse, error)
+	Reset(context.Context, *ResetRequest) (*ResetResponse, error)
 	mustEmbedUnimplementedNodedServer()
 }
 
@@ -459,6 +487,12 @@ func (UnimplementedNodedServer) Pcap(*PcapRequest, grpc.ServerStreamingServer[Ch
 }
 func (UnimplementedNodedServer) WhoAmI(context.Context, *WhoAmIRequest) (*WhoAmIResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method WhoAmI not implemented")
+}
+func (UnimplementedNodedServer) ResetPreflight(context.Context, *ResetRequest) (*ResetPreflightResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ResetPreflight not implemented")
+}
+func (UnimplementedNodedServer) Reset(context.Context, *ResetRequest) (*ResetResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Reset not implemented")
 }
 func (UnimplementedNodedServer) mustEmbedUnimplementedNodedServer() {}
 func (UnimplementedNodedServer) testEmbeddedByValue()               {}
@@ -867,6 +901,42 @@ func _Noded_WhoAmI_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Noded_ResetPreflight_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodedServer).ResetPreflight(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Noded_ResetPreflight_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodedServer).ResetPreflight(ctx, req.(*ResetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Noded_Reset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodedServer).Reset(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Noded_Reset_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodedServer).Reset(ctx, req.(*ResetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Noded_ServiceDesc is the grpc.ServiceDesc for Noded service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -949,6 +1019,14 @@ var Noded_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "WhoAmI",
 			Handler:    _Noded_WhoAmI_Handler,
+		},
+		{
+			MethodName: "ResetPreflight",
+			Handler:    _Noded_ResetPreflight_Handler,
+		},
+		{
+			MethodName: "Reset",
+			Handler:    _Noded_Reset_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

@@ -67,12 +67,14 @@ jobs:
           name: release-${{ matrix.arch }}
           path: release-${{ matrix.arch }}
           retention-days: 7
-      - name: publish to stable-${{ matrix.arch }}
+      - name: publish to the channel (candidate for -rc tags, stable otherwise)
         if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag="stable-${{ matrix.arch }}"
+          # a tag like v0.3.0-rc1 goes to candidate-<arch>, which only the canary follows (nodectl channel); promote.yml copies
+          # it to stable-<arch> after the soak
+          case "${GITHUB_REF_NAME}" in *-rc*) tag="candidate-${{ matrix.arch }}";; *) tag="stable-${{ matrix.arch }}";; esac
           gh release view "$tag" >/dev/null 2>&1 || gh release create "$tag" --title "$tag" --notes "Rolling channel followed by nodes. Do not download by hand." --prerelease
           # replace the channel contents: nodes read SHA256SUMS in this directory. Upload first (SHA256SUMS last, so
           # it only ever lists files that exist), then drop assets that are no longer part of the release.

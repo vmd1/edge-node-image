@@ -891,6 +891,406 @@ func (x *SetRegistryConfigResponse) GetK3SAgentRestarted() bool {
 	return false
 }
 
+type GetConfigRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetConfigRequest) Reset() {
+	*x = GetConfigRequest{}
+	mi := &file_noded_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetConfigRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetConfigRequest) ProtoMessage() {}
+
+func (x *GetConfigRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noded_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetConfigRequest.ProtoReflect.Descriptor instead.
+func (*GetConfigRequest) Descriptor() ([]byte, []int) {
+	return file_noded_proto_rawDescGZIP(), []int{18}
+}
+
+type ConfigState struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	AppliedJson     string                 `protobuf:"bytes,1,opt,name=applied_json,json=appliedJson,proto3" json:"applied_json,omitempty"` // last-known-good effective spec ("" = nothing configured)
+	AppliedHash     string                 `protobuf:"bytes,2,opt,name=applied_hash,json=appliedHash,proto3" json:"applied_hash,omitempty"`
+	StagedJson      string                 `protobuf:"bytes,3,opt,name=staged_json,json=stagedJson,proto3" json:"staged_json,omitempty"`                // waiting for the next boot
+	OverrideJson    string                 `protobuf:"bytes,4,opt,name=override_json,json=overrideJson,proto3" json:"override_json,omitempty"`          // active nodectl override, if any (beats the CRD)
+	OverrideExpires string                 `protobuf:"bytes,5,opt,name=override_expires,json=overrideExpires,proto3" json:"override_expires,omitempty"` // RFC 3339
+	Rendered        string                 `protobuf:"bytes,6,opt,name=rendered,proto3" json:"rendered,omitempty"`                                      // the generated files for the applied spec, as "path\n<content>" blocks
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ConfigState) Reset() {
+	*x = ConfigState{}
+	mi := &file_noded_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConfigState) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConfigState) ProtoMessage() {}
+
+func (x *ConfigState) ProtoReflect() protoreflect.Message {
+	mi := &file_noded_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConfigState.ProtoReflect.Descriptor instead.
+func (*ConfigState) Descriptor() ([]byte, []int) {
+	return file_noded_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *ConfigState) GetAppliedJson() string {
+	if x != nil {
+		return x.AppliedJson
+	}
+	return ""
+}
+
+func (x *ConfigState) GetAppliedHash() string {
+	if x != nil {
+		return x.AppliedHash
+	}
+	return ""
+}
+
+func (x *ConfigState) GetStagedJson() string {
+	if x != nil {
+		return x.StagedJson
+	}
+	return ""
+}
+
+func (x *ConfigState) GetOverrideJson() string {
+	if x != nil {
+		return x.OverrideJson
+	}
+	return ""
+}
+
+func (x *ConfigState) GetOverrideExpires() string {
+	if x != nil {
+		return x.OverrideExpires
+	}
+	return ""
+}
+
+func (x *ConfigState) GetRendered() string {
+	if x != nil {
+		return x.Rendered
+	}
+	return ""
+}
+
+type ValidateConfigRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SpecJson      string                 `protobuf:"bytes,1,opt,name=spec_json,json=specJson,proto3" json:"spec_json,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ValidateConfigRequest) Reset() {
+	*x = ValidateConfigRequest{}
+	mi := &file_noded_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ValidateConfigRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ValidateConfigRequest) ProtoMessage() {}
+
+func (x *ValidateConfigRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noded_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ValidateConfigRequest.ProtoReflect.Descriptor instead.
+func (*ValidateConfigRequest) Descriptor() ([]byte, []int) {
+	return file_noded_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *ValidateConfigRequest) GetSpecJson() string {
+	if x != nil {
+		return x.SpecJson
+	}
+	return ""
+}
+
+type ValidateConfigResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Valid         bool                   `protobuf:"varint,1,opt,name=valid,proto3" json:"valid,omitempty"`
+	Error         string                 `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+	Hash          string                 `protobuf:"bytes,3,opt,name=hash,proto3" json:"hash,omitempty"`
+	Rendered      string                 `protobuf:"bytes,4,opt,name=rendered,proto3" json:"rendered,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ValidateConfigResponse) Reset() {
+	*x = ValidateConfigResponse{}
+	mi := &file_noded_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ValidateConfigResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ValidateConfigResponse) ProtoMessage() {}
+
+func (x *ValidateConfigResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noded_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ValidateConfigResponse.ProtoReflect.Descriptor instead.
+func (*ValidateConfigResponse) Descriptor() ([]byte, []int) {
+	return file_noded_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *ValidateConfigResponse) GetValid() bool {
+	if x != nil {
+		return x.Valid
+	}
+	return false
+}
+
+func (x *ValidateConfigResponse) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
+func (x *ValidateConfigResponse) GetHash() string {
+	if x != nil {
+		return x.Hash
+	}
+	return ""
+}
+
+func (x *ValidateConfigResponse) GetRendered() string {
+	if x != nil {
+		return x.Rendered
+	}
+	return ""
+}
+
+type SetConfigOverrideRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SpecJson      string                 `protobuf:"bytes,1,opt,name=spec_json,json=specJson,proto3" json:"spec_json,omitempty"`
+	TtlSeconds    uint32                 `protobuf:"varint,2,opt,name=ttl_seconds,json=ttlSeconds,proto3" json:"ttl_seconds,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetConfigOverrideRequest) Reset() {
+	*x = SetConfigOverrideRequest{}
+	mi := &file_noded_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetConfigOverrideRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetConfigOverrideRequest) ProtoMessage() {}
+
+func (x *SetConfigOverrideRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noded_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetConfigOverrideRequest.ProtoReflect.Descriptor instead.
+func (*SetConfigOverrideRequest) Descriptor() ([]byte, []int) {
+	return file_noded_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *SetConfigOverrideRequest) GetSpecJson() string {
+	if x != nil {
+		return x.SpecJson
+	}
+	return ""
+}
+
+func (x *SetConfigOverrideRequest) GetTtlSeconds() uint32 {
+	if x != nil {
+		return x.TtlSeconds
+	}
+	return 0
+}
+
+type SetConfigOverrideResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Expires       string                 `protobuf:"bytes,1,opt,name=expires,proto3" json:"expires,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetConfigOverrideResponse) Reset() {
+	*x = SetConfigOverrideResponse{}
+	mi := &file_noded_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetConfigOverrideResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetConfigOverrideResponse) ProtoMessage() {}
+
+func (x *SetConfigOverrideResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noded_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetConfigOverrideResponse.ProtoReflect.Descriptor instead.
+func (*SetConfigOverrideResponse) Descriptor() ([]byte, []int) {
+	return file_noded_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *SetConfigOverrideResponse) GetExpires() string {
+	if x != nil {
+		return x.Expires
+	}
+	return ""
+}
+
+type ClearConfigOverrideRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ClearConfigOverrideRequest) Reset() {
+	*x = ClearConfigOverrideRequest{}
+	mi := &file_noded_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClearConfigOverrideRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClearConfigOverrideRequest) ProtoMessage() {}
+
+func (x *ClearConfigOverrideRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noded_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClearConfigOverrideRequest.ProtoReflect.Descriptor instead.
+func (*ClearConfigOverrideRequest) Descriptor() ([]byte, []int) {
+	return file_noded_proto_rawDescGZIP(), []int{24}
+}
+
+type ClearConfigOverrideResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ClearConfigOverrideResponse) Reset() {
+	*x = ClearConfigOverrideResponse{}
+	mi := &file_noded_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClearConfigOverrideResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClearConfigOverrideResponse) ProtoMessage() {}
+
+func (x *ClearConfigOverrideResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noded_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClearConfigOverrideResponse.ProtoReflect.Descriptor instead.
+func (*ClearConfigOverrideResponse) Descriptor() ([]byte, []int) {
+	return file_noded_proto_rawDescGZIP(), []int{25}
+}
+
 var File_noded_proto protoreflect.FileDescriptor
 
 const file_noded_proto_rawDesc = "" +
@@ -948,7 +1348,31 @@ const file_noded_proto_rawDesc = "" +
 	"\x10docker_io_mirror\x18\x01 \x01(\tR\x0edockerIoMirror\x12,\n" +
 	"\x12docker_io_fallback\x18\x02 \x01(\tR\x10dockerIoFallback\"K\n" +
 	"\x19SetRegistryConfigResponse\x12.\n" +
-	"\x13k3s_agent_restarted\x18\x01 \x01(\bR\x11k3sAgentRestarted2\xdb\x05\n" +
+	"\x13k3s_agent_restarted\x18\x01 \x01(\bR\x11k3sAgentRestarted\"\x12\n" +
+	"\x10GetConfigRequest\"\xe0\x01\n" +
+	"\vConfigState\x12!\n" +
+	"\fapplied_json\x18\x01 \x01(\tR\vappliedJson\x12!\n" +
+	"\fapplied_hash\x18\x02 \x01(\tR\vappliedHash\x12\x1f\n" +
+	"\vstaged_json\x18\x03 \x01(\tR\n" +
+	"stagedJson\x12#\n" +
+	"\roverride_json\x18\x04 \x01(\tR\foverrideJson\x12)\n" +
+	"\x10override_expires\x18\x05 \x01(\tR\x0foverrideExpires\x12\x1a\n" +
+	"\brendered\x18\x06 \x01(\tR\brendered\"4\n" +
+	"\x15ValidateConfigRequest\x12\x1b\n" +
+	"\tspec_json\x18\x01 \x01(\tR\bspecJson\"t\n" +
+	"\x16ValidateConfigResponse\x12\x14\n" +
+	"\x05valid\x18\x01 \x01(\bR\x05valid\x12\x14\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\x12\x12\n" +
+	"\x04hash\x18\x03 \x01(\tR\x04hash\x12\x1a\n" +
+	"\brendered\x18\x04 \x01(\tR\brendered\"X\n" +
+	"\x18SetConfigOverrideRequest\x12\x1b\n" +
+	"\tspec_json\x18\x01 \x01(\tR\bspecJson\x12\x1f\n" +
+	"\vttl_seconds\x18\x02 \x01(\rR\n" +
+	"ttlSeconds\"5\n" +
+	"\x19SetConfigOverrideResponse\x12\x18\n" +
+	"\aexpires\x18\x01 \x01(\tR\aexpires\"\x1c\n" +
+	"\x1aClearConfigOverrideRequest\"\x1d\n" +
+	"\x1bClearConfigOverrideResponse2\xb2\b\n" +
 	"\x05Noded\x12;\n" +
 	"\x06Status\x12\x17.noded.v1.StatusRequest\x1a\x18.noded.v1.StatusResponse\x122\n" +
 	"\x04Logs\x12\x15.noded.v1.LogsRequest\x1a\x11.noded.v1.LogLine0\x01\x12J\n" +
@@ -959,7 +1383,11 @@ const file_noded_proto_rawDesc = "" +
 	"\x06Reboot\x12\x17.noded.v1.RebootRequest\x1a\x18.noded.v1.RebootResponse\x12J\n" +
 	"\vSetBootSlot\x12\x1c.noded.v1.SetBootSlotRequest\x1a\x1d.noded.v1.SetBootSlotResponse\x12Q\n" +
 	"\x11GetRegistryConfig\x12\".noded.v1.GetRegistryConfigRequest\x1a\x18.noded.v1.RegistryConfig\x12R\n" +
-	"\x11SetRegistryConfig\x12\x18.noded.v1.RegistryConfig\x1a#.noded.v1.SetRegistryConfigResponseB-Z+github.com/vmd1/edge-node-image/gen/nodedv1b\x06proto3"
+	"\x11SetRegistryConfig\x12\x18.noded.v1.RegistryConfig\x1a#.noded.v1.SetRegistryConfigResponse\x12>\n" +
+	"\tGetConfig\x12\x1a.noded.v1.GetConfigRequest\x1a\x15.noded.v1.ConfigState\x12S\n" +
+	"\x0eValidateConfig\x12\x1f.noded.v1.ValidateConfigRequest\x1a .noded.v1.ValidateConfigResponse\x12\\\n" +
+	"\x11SetConfigOverride\x12\".noded.v1.SetConfigOverrideRequest\x1a#.noded.v1.SetConfigOverrideResponse\x12b\n" +
+	"\x13ClearConfigOverride\x12$.noded.v1.ClearConfigOverrideRequest\x1a%.noded.v1.ClearConfigOverrideResponseB-Z+github.com/vmd1/edge-node-image/gen/nodedv1b\x06proto3"
 
 var (
 	file_noded_proto_rawDescOnce sync.Once
@@ -973,30 +1401,38 @@ func file_noded_proto_rawDescGZIP() []byte {
 	return file_noded_proto_rawDescData
 }
 
-var file_noded_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_noded_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
 var file_noded_proto_goTypes = []any{
-	(*StatusRequest)(nil),             // 0: noded.v1.StatusRequest
-	(*StatusResponse)(nil),            // 1: noded.v1.StatusResponse
-	(*LogsRequest)(nil),               // 2: noded.v1.LogsRequest
-	(*LogLine)(nil),                   // 3: noded.v1.LogLine
-	(*CheckUpdateRequest)(nil),        // 4: noded.v1.CheckUpdateRequest
-	(*CheckUpdateResponse)(nil),       // 5: noded.v1.CheckUpdateResponse
-	(*StageUpdateRequest)(nil),        // 6: noded.v1.StageUpdateRequest
-	(*StageUpdateResponse)(nil),       // 7: noded.v1.StageUpdateResponse
-	(*GetUpdateConfigRequest)(nil),    // 8: noded.v1.GetUpdateConfigRequest
-	(*UpdateConfig)(nil),              // 9: noded.v1.UpdateConfig
-	(*SetUpdateConfigResponse)(nil),   // 10: noded.v1.SetUpdateConfigResponse
-	(*RebootRequest)(nil),             // 11: noded.v1.RebootRequest
-	(*RebootResponse)(nil),            // 12: noded.v1.RebootResponse
-	(*SetBootSlotRequest)(nil),        // 13: noded.v1.SetBootSlotRequest
-	(*SetBootSlotResponse)(nil),       // 14: noded.v1.SetBootSlotResponse
-	(*GetRegistryConfigRequest)(nil),  // 15: noded.v1.GetRegistryConfigRequest
-	(*RegistryConfig)(nil),            // 16: noded.v1.RegistryConfig
-	(*SetRegistryConfigResponse)(nil), // 17: noded.v1.SetRegistryConfigResponse
-	nil,                               // 18: noded.v1.StatusResponse.UnitsEntry
+	(*StatusRequest)(nil),               // 0: noded.v1.StatusRequest
+	(*StatusResponse)(nil),              // 1: noded.v1.StatusResponse
+	(*LogsRequest)(nil),                 // 2: noded.v1.LogsRequest
+	(*LogLine)(nil),                     // 3: noded.v1.LogLine
+	(*CheckUpdateRequest)(nil),          // 4: noded.v1.CheckUpdateRequest
+	(*CheckUpdateResponse)(nil),         // 5: noded.v1.CheckUpdateResponse
+	(*StageUpdateRequest)(nil),          // 6: noded.v1.StageUpdateRequest
+	(*StageUpdateResponse)(nil),         // 7: noded.v1.StageUpdateResponse
+	(*GetUpdateConfigRequest)(nil),      // 8: noded.v1.GetUpdateConfigRequest
+	(*UpdateConfig)(nil),                // 9: noded.v1.UpdateConfig
+	(*SetUpdateConfigResponse)(nil),     // 10: noded.v1.SetUpdateConfigResponse
+	(*RebootRequest)(nil),               // 11: noded.v1.RebootRequest
+	(*RebootResponse)(nil),              // 12: noded.v1.RebootResponse
+	(*SetBootSlotRequest)(nil),          // 13: noded.v1.SetBootSlotRequest
+	(*SetBootSlotResponse)(nil),         // 14: noded.v1.SetBootSlotResponse
+	(*GetRegistryConfigRequest)(nil),    // 15: noded.v1.GetRegistryConfigRequest
+	(*RegistryConfig)(nil),              // 16: noded.v1.RegistryConfig
+	(*SetRegistryConfigResponse)(nil),   // 17: noded.v1.SetRegistryConfigResponse
+	(*GetConfigRequest)(nil),            // 18: noded.v1.GetConfigRequest
+	(*ConfigState)(nil),                 // 19: noded.v1.ConfigState
+	(*ValidateConfigRequest)(nil),       // 20: noded.v1.ValidateConfigRequest
+	(*ValidateConfigResponse)(nil),      // 21: noded.v1.ValidateConfigResponse
+	(*SetConfigOverrideRequest)(nil),    // 22: noded.v1.SetConfigOverrideRequest
+	(*SetConfigOverrideResponse)(nil),   // 23: noded.v1.SetConfigOverrideResponse
+	(*ClearConfigOverrideRequest)(nil),  // 24: noded.v1.ClearConfigOverrideRequest
+	(*ClearConfigOverrideResponse)(nil), // 25: noded.v1.ClearConfigOverrideResponse
+	nil,                                 // 26: noded.v1.StatusResponse.UnitsEntry
 }
 var file_noded_proto_depIdxs = []int32{
-	18, // 0: noded.v1.StatusResponse.units:type_name -> noded.v1.StatusResponse.UnitsEntry
+	26, // 0: noded.v1.StatusResponse.units:type_name -> noded.v1.StatusResponse.UnitsEntry
 	0,  // 1: noded.v1.Noded.Status:input_type -> noded.v1.StatusRequest
 	2,  // 2: noded.v1.Noded.Logs:input_type -> noded.v1.LogsRequest
 	4,  // 3: noded.v1.Noded.CheckUpdate:input_type -> noded.v1.CheckUpdateRequest
@@ -1007,18 +1443,26 @@ var file_noded_proto_depIdxs = []int32{
 	13, // 8: noded.v1.Noded.SetBootSlot:input_type -> noded.v1.SetBootSlotRequest
 	15, // 9: noded.v1.Noded.GetRegistryConfig:input_type -> noded.v1.GetRegistryConfigRequest
 	16, // 10: noded.v1.Noded.SetRegistryConfig:input_type -> noded.v1.RegistryConfig
-	1,  // 11: noded.v1.Noded.Status:output_type -> noded.v1.StatusResponse
-	3,  // 12: noded.v1.Noded.Logs:output_type -> noded.v1.LogLine
-	5,  // 13: noded.v1.Noded.CheckUpdate:output_type -> noded.v1.CheckUpdateResponse
-	7,  // 14: noded.v1.Noded.StageUpdate:output_type -> noded.v1.StageUpdateResponse
-	9,  // 15: noded.v1.Noded.GetUpdateConfig:output_type -> noded.v1.UpdateConfig
-	10, // 16: noded.v1.Noded.SetUpdateConfig:output_type -> noded.v1.SetUpdateConfigResponse
-	12, // 17: noded.v1.Noded.Reboot:output_type -> noded.v1.RebootResponse
-	14, // 18: noded.v1.Noded.SetBootSlot:output_type -> noded.v1.SetBootSlotResponse
-	16, // 19: noded.v1.Noded.GetRegistryConfig:output_type -> noded.v1.RegistryConfig
-	17, // 20: noded.v1.Noded.SetRegistryConfig:output_type -> noded.v1.SetRegistryConfigResponse
-	11, // [11:21] is the sub-list for method output_type
-	1,  // [1:11] is the sub-list for method input_type
+	18, // 11: noded.v1.Noded.GetConfig:input_type -> noded.v1.GetConfigRequest
+	20, // 12: noded.v1.Noded.ValidateConfig:input_type -> noded.v1.ValidateConfigRequest
+	22, // 13: noded.v1.Noded.SetConfigOverride:input_type -> noded.v1.SetConfigOverrideRequest
+	24, // 14: noded.v1.Noded.ClearConfigOverride:input_type -> noded.v1.ClearConfigOverrideRequest
+	1,  // 15: noded.v1.Noded.Status:output_type -> noded.v1.StatusResponse
+	3,  // 16: noded.v1.Noded.Logs:output_type -> noded.v1.LogLine
+	5,  // 17: noded.v1.Noded.CheckUpdate:output_type -> noded.v1.CheckUpdateResponse
+	7,  // 18: noded.v1.Noded.StageUpdate:output_type -> noded.v1.StageUpdateResponse
+	9,  // 19: noded.v1.Noded.GetUpdateConfig:output_type -> noded.v1.UpdateConfig
+	10, // 20: noded.v1.Noded.SetUpdateConfig:output_type -> noded.v1.SetUpdateConfigResponse
+	12, // 21: noded.v1.Noded.Reboot:output_type -> noded.v1.RebootResponse
+	14, // 22: noded.v1.Noded.SetBootSlot:output_type -> noded.v1.SetBootSlotResponse
+	16, // 23: noded.v1.Noded.GetRegistryConfig:output_type -> noded.v1.RegistryConfig
+	17, // 24: noded.v1.Noded.SetRegistryConfig:output_type -> noded.v1.SetRegistryConfigResponse
+	19, // 25: noded.v1.Noded.GetConfig:output_type -> noded.v1.ConfigState
+	21, // 26: noded.v1.Noded.ValidateConfig:output_type -> noded.v1.ValidateConfigResponse
+	23, // 27: noded.v1.Noded.SetConfigOverride:output_type -> noded.v1.SetConfigOverrideResponse
+	25, // 28: noded.v1.Noded.ClearConfigOverride:output_type -> noded.v1.ClearConfigOverrideResponse
+	15, // [15:29] is the sub-list for method output_type
+	1,  // [1:15] is the sub-list for method input_type
 	1,  // [1:1] is the sub-list for extension type_name
 	1,  // [1:1] is the sub-list for extension extendee
 	0,  // [0:1] is the sub-list for field type_name
@@ -1035,7 +1479,7 @@ func file_noded_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_noded_proto_rawDesc), len(file_noded_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   19,
+			NumMessages:   27,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

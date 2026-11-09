@@ -17,6 +17,11 @@ service Noded {
   rpc SetBootSlot(SetBootSlotRequest) returns (SetBootSlotResponse);
   rpc GetRegistryConfig(GetRegistryConfigRequest) returns (RegistryConfig);
   rpc SetRegistryConfig(RegistryConfig) returns (SetRegistryConfigResponse);
+  // Declarative node config (EdgeNodeConfig): the agent pulls the objects itself; these RPCs are the out-of-band path.
+  rpc GetConfig(GetConfigRequest) returns (ConfigState);
+  rpc ValidateConfig(ValidateConfigRequest) returns (ValidateConfigResponse);
+  rpc SetConfigOverride(SetConfigOverrideRequest) returns (SetConfigOverrideResponse);
+  rpc ClearConfigOverride(ClearConfigOverrideRequest) returns (ClearConfigOverrideResponse);
 }
 
 message StatusRequest {}
@@ -68,3 +73,19 @@ message RegistryConfig {
   string docker_io_fallback = 2;
 }
 message SetRegistryConfigResponse { bool k3s_agent_restarted = 1; }
+
+message GetConfigRequest {}
+message ConfigState {
+  string applied_json = 1;      // last-known-good effective spec ("" = nothing configured)
+  string applied_hash = 2;
+  string staged_json = 3;       // waiting for the next boot
+  string override_json = 4;     // active nodectl override, if any (beats the CRD)
+  string override_expires = 5;  // RFC 3339
+  string rendered = 6;          // the generated files for the applied spec, as "path\n<content>" blocks
+}
+message ValidateConfigRequest { string spec_json = 1; }
+message ValidateConfigResponse { bool valid = 1; string error = 2; string hash = 3; string rendered = 4; }
+message SetConfigOverrideRequest { string spec_json = 1; uint32 ttl_seconds = 2; }   // 0 = default 4 h, max 7 d
+message SetConfigOverrideResponse { string expires = 1; }
+message ClearConfigOverrideRequest {}
+message ClearConfigOverrideResponse {}

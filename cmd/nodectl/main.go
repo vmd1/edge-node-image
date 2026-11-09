@@ -31,6 +31,7 @@ const usage = `usage: nodectl [--addr host:port] [--no-kube] [--yes] <command> [
   reboot   <node>                   drain, reboot, wait, uncordon                     (needs --yes)
   registry <node> show|set [--mirror URL] [--fallback URL]
   channel  <node> show|set <url>|reset   update source (https release directory)
+  config   <node> show|validate -f F|diff -f F|set -f F [--ttl 4h]|clear   declarative node config
   debug    <node>                   kubectl debug node/<node>
 
 <node> is a Kubernetes node name (address looked up with kubectl), or use --addr to talk to one agent directly.
@@ -164,6 +165,8 @@ func run(ctx context.Context, e *env, args []string) error {
 		return registry(cctx, cl, rest)
 	case "channel":
 		return channel(cctx, cl, rest)
+	case "config":
+		return configCmd(cctx, cl, rest)
 	}
 	return fmt.Errorf("unknown command %q\n%s", cmd, usage)
 }
@@ -423,4 +426,111 @@ func channel(ctx context.Context, cl pb.NodedClient, rest []string) error {
 		return err
 	}
 	return fmt.Errorf("channel <node> show|set <url>|reset")
+}
+
+func readSpecArg(fs *flag.FlagSet, args []string) (string, time.Duration, error) {
+	file := fs.String("f", "", "EdgeNodeConfig spec as JSON (a file, or - for stdin)")
+	ttl := fs.Duration("ttl", 0, "override lifetime (default 4h, max 168h)")
+	if err := fs.Parse(args); err != nil {
+		return "", 0, err
+	}
+	if *file == "" {
+		return "", 0, fmt.Errorf("-f <spec.json> is required")
+	}
+	var b []byte
+	var err error
+	if *file == "-" {
+		b, err = io.ReadAll(os.Stdin)
+	} else {
+		b, err = os.ReadFile(*file)
+	}
+	return string(b), *ttl, err
+}
+
+func configCmd(ctx context.Context, cl pb.NodedClient, rest []string) error {
+	const u = "config <node> show|validate -f F|diff -f F|set -f F [--ttl 4h]|clear"
+	if len(rest) == 0 {
+		return fmt.Errorf(u)
+	}
+	fs := flag.NewFlagSet("config "+rest[0], flag.ContinueOnError)
+	switch rest[0] {
+	case "show":
+		st, err := cl.GetConfig(ctx, &pb.GetConfigRequest{})
+		if err != nil {
+			return err
+		}
+		fmt.Printf("applied hash %q\napplied      %s\nstaged       %s\noverride     %s (expires %s)\n\n%s", st.AppliedHash, orDash(st.AppliedJson), orDash(st.StagedJson), orDash(st.OverrideJson), orDash(st.OverrideExpires), st.Rendered)
+		return nil
+	case "validate", "diff":
+		js, _, err := readSpecArg(fs, rest[1:])
+		if err != nil {
+			return err
+		}
+		v, err := cl.ValidateConfig(ctx, &pb.ValidateConfigRequest{SpecJson: js})
+		if err != nil {
+			return err
+		}
+		if !v.Valid {
+			return fmt.Errorf("invalid: %s", v.Error)
+		}
+		if rest[0] == "validate" {
+			fmt.Printf("valid (hash %s)\n%s", v.Hash, v.Rendered)
+			return nil
+		}
+		cur, err := cl.GetConfig(ctx, &pb.GetConfigRequest{})
+		if err != nil {
+			return err
+		}
+		fmt.Print(lineDiff(cur.Rendered, v.Rendered))
+		return nil
+	case "set":
+		js, ttl, err := readSpecArg(fs, rest[1:])
+		if err != nil {
+			return err
+		}
+		r, err := cl.SetConfigOverride(ctx, &pb.SetConfigOverrideRequest{SpecJson: js, TtlSeconds: uint32(ttl / time.Second)})
+		if err != nil {
+			return err
+		}
+		fmt.Printf("override set, expires %s (it beats the cluster config until then; the node applies it within a minute)\n", r.Expires)
+		return nil
+	case "clear":
+		_, err := cl.ClearConfigOverride(ctx, &pb.ClearConfigOverrideRequest{})
+		return err
+	}
+	return fmt.Errorf(u)
+}
+
+func orDash(s string) string {
+	if s == "" {
+		return "-"
+	}
+	return s
+}
+
+// lineDiff prints lines only in a with "-" and lines only in b with "+" (the rendered files are short and order-stable).
+func lineDiff(a, b string) string {
+	set := func(s string) map[string]bool {
+		m := map[string]bool{}
+		for _, l := range strings.Split(s, "\n") {
+			m[l] = true
+		}
+		return m
+	}
+	sa, sb := set(a), set(b)
+	var out strings.Builder
+	for _, l := range strings.Split(a, "\n") {
+		if l != "" && !sb[l] {
+			out.WriteString("- " + l + "\n")
+		}
+	}
+	for _, l := range strings.Split(b, "\n") {
+		if l != "" && !sa[l] {
+			out.WriteString("+ " + l + "\n")
+		}
+	}
+	if out.Len() == 0 {
+		return "no difference\n"
+	}
+	return out.String()
 }

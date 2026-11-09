@@ -22,16 +22,20 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Noded_Status_FullMethodName            = "/noded.v1.Noded/Status"
-	Noded_Logs_FullMethodName              = "/noded.v1.Noded/Logs"
-	Noded_CheckUpdate_FullMethodName       = "/noded.v1.Noded/CheckUpdate"
-	Noded_StageUpdate_FullMethodName       = "/noded.v1.Noded/StageUpdate"
-	Noded_GetUpdateConfig_FullMethodName   = "/noded.v1.Noded/GetUpdateConfig"
-	Noded_SetUpdateConfig_FullMethodName   = "/noded.v1.Noded/SetUpdateConfig"
-	Noded_Reboot_FullMethodName            = "/noded.v1.Noded/Reboot"
-	Noded_SetBootSlot_FullMethodName       = "/noded.v1.Noded/SetBootSlot"
-	Noded_GetRegistryConfig_FullMethodName = "/noded.v1.Noded/GetRegistryConfig"
-	Noded_SetRegistryConfig_FullMethodName = "/noded.v1.Noded/SetRegistryConfig"
+	Noded_Status_FullMethodName              = "/noded.v1.Noded/Status"
+	Noded_Logs_FullMethodName                = "/noded.v1.Noded/Logs"
+	Noded_CheckUpdate_FullMethodName         = "/noded.v1.Noded/CheckUpdate"
+	Noded_StageUpdate_FullMethodName         = "/noded.v1.Noded/StageUpdate"
+	Noded_GetUpdateConfig_FullMethodName     = "/noded.v1.Noded/GetUpdateConfig"
+	Noded_SetUpdateConfig_FullMethodName     = "/noded.v1.Noded/SetUpdateConfig"
+	Noded_Reboot_FullMethodName              = "/noded.v1.Noded/Reboot"
+	Noded_SetBootSlot_FullMethodName         = "/noded.v1.Noded/SetBootSlot"
+	Noded_GetRegistryConfig_FullMethodName   = "/noded.v1.Noded/GetRegistryConfig"
+	Noded_SetRegistryConfig_FullMethodName   = "/noded.v1.Noded/SetRegistryConfig"
+	Noded_GetConfig_FullMethodName           = "/noded.v1.Noded/GetConfig"
+	Noded_ValidateConfig_FullMethodName      = "/noded.v1.Noded/ValidateConfig"
+	Noded_SetConfigOverride_FullMethodName   = "/noded.v1.Noded/SetConfigOverride"
+	Noded_ClearConfigOverride_FullMethodName = "/noded.v1.Noded/ClearConfigOverride"
 )
 
 // NodedClient is the client API for Noded service.
@@ -48,6 +52,11 @@ type NodedClient interface {
 	SetBootSlot(ctx context.Context, in *SetBootSlotRequest, opts ...grpc.CallOption) (*SetBootSlotResponse, error)
 	GetRegistryConfig(ctx context.Context, in *GetRegistryConfigRequest, opts ...grpc.CallOption) (*RegistryConfig, error)
 	SetRegistryConfig(ctx context.Context, in *RegistryConfig, opts ...grpc.CallOption) (*SetRegistryConfigResponse, error)
+	// Declarative node config (EdgeNodeConfig): the agent pulls the objects itself; these RPCs are the out-of-band path.
+	GetConfig(ctx context.Context, in *GetConfigRequest, opts ...grpc.CallOption) (*ConfigState, error)
+	ValidateConfig(ctx context.Context, in *ValidateConfigRequest, opts ...grpc.CallOption) (*ValidateConfigResponse, error)
+	SetConfigOverride(ctx context.Context, in *SetConfigOverrideRequest, opts ...grpc.CallOption) (*SetConfigOverrideResponse, error)
+	ClearConfigOverride(ctx context.Context, in *ClearConfigOverrideRequest, opts ...grpc.CallOption) (*ClearConfigOverrideResponse, error)
 }
 
 type nodedClient struct {
@@ -167,6 +176,46 @@ func (c *nodedClient) SetRegistryConfig(ctx context.Context, in *RegistryConfig,
 	return out, nil
 }
 
+func (c *nodedClient) GetConfig(ctx context.Context, in *GetConfigRequest, opts ...grpc.CallOption) (*ConfigState, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ConfigState)
+	err := c.cc.Invoke(ctx, Noded_GetConfig_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodedClient) ValidateConfig(ctx context.Context, in *ValidateConfigRequest, opts ...grpc.CallOption) (*ValidateConfigResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ValidateConfigResponse)
+	err := c.cc.Invoke(ctx, Noded_ValidateConfig_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodedClient) SetConfigOverride(ctx context.Context, in *SetConfigOverrideRequest, opts ...grpc.CallOption) (*SetConfigOverrideResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SetConfigOverrideResponse)
+	err := c.cc.Invoke(ctx, Noded_SetConfigOverride_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodedClient) ClearConfigOverride(ctx context.Context, in *ClearConfigOverrideRequest, opts ...grpc.CallOption) (*ClearConfigOverrideResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ClearConfigOverrideResponse)
+	err := c.cc.Invoke(ctx, Noded_ClearConfigOverride_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // NodedServer is the server API for Noded service.
 // All implementations must embed UnimplementedNodedServer
 // for forward compatibility.
@@ -181,6 +230,11 @@ type NodedServer interface {
 	SetBootSlot(context.Context, *SetBootSlotRequest) (*SetBootSlotResponse, error)
 	GetRegistryConfig(context.Context, *GetRegistryConfigRequest) (*RegistryConfig, error)
 	SetRegistryConfig(context.Context, *RegistryConfig) (*SetRegistryConfigResponse, error)
+	// Declarative node config (EdgeNodeConfig): the agent pulls the objects itself; these RPCs are the out-of-band path.
+	GetConfig(context.Context, *GetConfigRequest) (*ConfigState, error)
+	ValidateConfig(context.Context, *ValidateConfigRequest) (*ValidateConfigResponse, error)
+	SetConfigOverride(context.Context, *SetConfigOverrideRequest) (*SetConfigOverrideResponse, error)
+	ClearConfigOverride(context.Context, *ClearConfigOverrideRequest) (*ClearConfigOverrideResponse, error)
 	mustEmbedUnimplementedNodedServer()
 }
 
@@ -220,6 +274,18 @@ func (UnimplementedNodedServer) GetRegistryConfig(context.Context, *GetRegistryC
 }
 func (UnimplementedNodedServer) SetRegistryConfig(context.Context, *RegistryConfig) (*SetRegistryConfigResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SetRegistryConfig not implemented")
+}
+func (UnimplementedNodedServer) GetConfig(context.Context, *GetConfigRequest) (*ConfigState, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetConfig not implemented")
+}
+func (UnimplementedNodedServer) ValidateConfig(context.Context, *ValidateConfigRequest) (*ValidateConfigResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ValidateConfig not implemented")
+}
+func (UnimplementedNodedServer) SetConfigOverride(context.Context, *SetConfigOverrideRequest) (*SetConfigOverrideResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetConfigOverride not implemented")
+}
+func (UnimplementedNodedServer) ClearConfigOverride(context.Context, *ClearConfigOverrideRequest) (*ClearConfigOverrideResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ClearConfigOverride not implemented")
 }
 func (UnimplementedNodedServer) mustEmbedUnimplementedNodedServer() {}
 func (UnimplementedNodedServer) testEmbeddedByValue()               {}
@@ -415,6 +481,78 @@ func _Noded_SetRegistryConfig_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Noded_GetConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodedServer).GetConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Noded_GetConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodedServer).GetConfig(ctx, req.(*GetConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Noded_ValidateConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ValidateConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodedServer).ValidateConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Noded_ValidateConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodedServer).ValidateConfig(ctx, req.(*ValidateConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Noded_SetConfigOverride_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetConfigOverrideRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodedServer).SetConfigOverride(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Noded_SetConfigOverride_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodedServer).SetConfigOverride(ctx, req.(*SetConfigOverrideRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Noded_ClearConfigOverride_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ClearConfigOverrideRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodedServer).ClearConfigOverride(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Noded_ClearConfigOverride_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodedServer).ClearConfigOverride(ctx, req.(*ClearConfigOverrideRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Noded_ServiceDesc is the grpc.ServiceDesc for Noded service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -457,6 +595,22 @@ var Noded_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetRegistryConfig",
 			Handler:    _Noded_SetRegistryConfig_Handler,
+		},
+		{
+			MethodName: "GetConfig",
+			Handler:    _Noded_GetConfig_Handler,
+		},
+		{
+			MethodName: "ValidateConfig",
+			Handler:    _Noded_ValidateConfig_Handler,
+		},
+		{
+			MethodName: "SetConfigOverride",
+			Handler:    _Noded_SetConfigOverride_Handler,
+		},
+		{
+			MethodName: "ClearConfigOverride",
+			Handler:    _Noded_ClearConfigOverride_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

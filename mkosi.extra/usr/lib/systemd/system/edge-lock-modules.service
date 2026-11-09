@@ -3,7 +3,7 @@ Description=Disable kernel module loading once the node is healthy (kernel.modul
 # Off with a flag file written by EdgeNodeConfig moduleLockdown: false (/var/lib/edge/config/module-lockdown).
 ConditionPathExists=!/var/lib/edge/config/module-lockdown
 After=edge-health.service k3s-agent.service systemd-modules-load.service
-Wants=edge-health.service
+Requires=edge-health.service
 
 [Service]
 Type=oneshot

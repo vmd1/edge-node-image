@@ -14,6 +14,8 @@ LimitNOFILE=1048576
 LimitNPROC=infinity
 LimitCORE=infinity
 TasksMax=infinity
+# Phase 1.A: no pod (children inherit the bounding set) can load kernel modules or reboot the node
+CapabilityBoundingSet=~CAP_SYS_MODULE CAP_SYS_BOOT
 TimeoutStartSec=0
 Restart=always
 RestartSec=5s

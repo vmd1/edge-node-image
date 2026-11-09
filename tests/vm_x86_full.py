@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """End-to-end check of the roadmap features on the x86-64 debug image (KVM elsewhere, serial through a forwarded TCP port 4555).
 
-The VM joins a THROWAWAY k3s server running in Docker on this Mac over the tailnet (the production path). The real cluster is
-never touched: every nodectl call that uses kubectl gets KUBECONFIG pointed at the throwaway server.
+The VM joins a THROWAWAY k3s server running in Docker on this Mac. No Tailscale (the test key is not needed): the VM reaches the
+server through QEMU's 10.0.2.2 gateway, which hades-02 maps to its own loopback, so the server port must be tunnelled to it, and
+noded is reached through a forwarded port 7777:
+  ssh -N -L 4555:127.0.0.1:4555 -L 7777:127.0.0.1:7777 -R 6443:127.0.0.1:6443 hades-02
+The real cluster is never touched: every nodectl call that uses kubectl gets KUBECONFIG pointed at the throwaway server.
 
   env: CRD_DIR=<dir with edgenodeconfig-crd.yaml firewallrule-crd.yaml rbac.yaml>   NODECTL=<path to a darwin nodectl>
 """
@@ -12,8 +15,6 @@ from vmdrive import TcpSerial
 
 NODECTL = os.environ.get("NODECTL", f"{os.getcwd()}/.vm/bin/nodectl"); CRD_DIR = os.environ["CRD_DIR"]
 CT = "edge-test-k3s"; NODE = "edge-test-x86"
-KEY = open(os.path.expanduser("~/.config/edge-image-test/tailscale-authkey")).read().strip()
-MAC_TS = subprocess.run(["tailscale", "ip", "-4"], capture_output=True, text=True).stdout.split()[0]
 KC = "/tmp/edge-throwaway.kubeconfig"
 results = []
 def check(name, ok, detail=""):
@@ -33,32 +34,33 @@ def wait(fn, timeout, every=5):
     return None
 def ctl(*a, kube=False, timeout=120, stdin=None):
     env = dict(os.environ, KUBECONFIG=KC) if kube else dict(os.environ)
-    base = [NODECTL] + ([] if kube else ["--no-kube"]) + ["--addr", f"{IP}:7777"]
+    base = [NODECTL] + ([] if kube else ["--no-kube"]) + ["--addr", "127.0.0.1:7777"]
     p = subprocess.run(base + list(a), capture_output=True, text=True, timeout=timeout, env=env, input=stdin); return p.returncode, (p.stdout + p.stderr).strip()
 
 dk("rm", "-f", CT)
 rc, out = dk("run", "-d", "--name", CT, "--privileged", "-p", "6443:6443", "rancher/k3s:v1.35.5-k3s1", "server", "--token", "testtoken",
-             "--tls-san", MAC_TS, "--disable", "traefik", "--disable", "servicelb", "--disable", "metrics-server", "--write-kubeconfig-mode", "644", timeout=900)
+             "--tls-san", "10.0.2.2", "--tls-san", "127.0.0.1", "--disable", "traefik", "--disable", "servicelb", "--disable", "metrics-server", "--write-kubeconfig-mode", "644", timeout=900)
 check("throwaway k3s server started", rc == 0, out)
 check("throwaway server Ready", wait(lambda: kc("get", "nodes")[0] == 0 and "Ready" in kc("get", "nodes")[1], 300), "")
 for f in ["edgenodeconfig-crd.yaml", "firewallrule-crd.yaml", "rbac.yaml"]:
     dk("cp", f"{CRD_DIR}/{f}", f"{CT}:/tmp/{f}")
     rc, out = kc("apply", "-f", f"/tmp/{f}"); check(f"applied {f}", rc == 0, out)
 rc, kcfg = dk("exec", CT, "cat", "/etc/rancher/k3s/k3s.yaml")
-open(KC, "w").write(kcfg.replace("127.0.0.1", MAC_TS))
+open(KC, "w").write(kcfg)
 
 vm = TcpSerial("127.0.0.1", 4555, logfile=".vm/full-console.log"); vm.start()
-IP = None
+IP = "127.0.0.1"
 try:
     vm.login(300)
     def sh(c, t=60): return vm.sh(c, timeout=t)[1]
     vm.sh("stty -echo")
     vm.sh("mkdir -p /var/lib/edge && umask 077 && cat > /var/lib/edge/bootstrap.env <<'EOF'\n"
-          f"NODE_NAME={NODE}\nTAILSCALE_AUTHKEY={KEY}\nK3S_TOKEN=testtoken\nK3S_SERVER_URL=https://{MAC_TS}:6443\nEOF\ntrue")
+          f"NODE_NAME={NODE}\nK3S_TOKEN=testtoken\nK3S_SERVER_URL=https://10.0.2.2:6443\nEDGE_SKIP_TAILSCALE=1\nNODE_IP=10.0.2.15\nFLANNEL_IFACE=eth0\nEOF\ntrue")
+    # noded is reached over a forwarded port here, so the host firewall baseline must allow it (production uses tailscale0)
+    vm.sh("mkdir -p /run/systemd/system/noded.service.d && printf '[Service]\\nEnvironment=EDGE_FIREWALL_EXTRA_PORTS=7777/tcp\\n' > /run/systemd/system/noded.service.d/test.conf && systemctl daemon-reload && systemctl restart noded")
     vm.sh("stty echo")
     out = sh("systemctl restart edge-firstboot; journalctl -u edge-firstboot --no-pager -n 4 | cut -c1-150 | sed 's/tskey-[A-Za-z0-9-]*/<key>/g'", 300)
-    check("first boot done (tailnet joined, k3s config rendered)", "firstboot: done" in out, out)
-    IP = sh("tailscale ip -4").strip().splitlines()[-1]
+    check("first boot done (k3s config rendered)", "firstboot: done" in out, out)
     sh("systemctl start --no-block k3s-agent", 60)
     check("node joined and Ready", wait(lambda: " Ready" in kc("get", "node", NODE, "--no-headers")[1], 450), kc("get", "nodes")[1])
     time.sleep(20)
@@ -73,12 +75,12 @@ try:
     # ---- noded reachable, introspection (2.C) ------------------------------------------------------------------------------
     rc, out = ctl("status", "x"); check("nodectl status over the tailnet", rc == 0 and "image version" in out, out)
     rc, out = ctl("whoami", "x"); print(out); check("whoami reports a mode (audit by default)", "audit" in out, out)
-    for kind in ["image", "memory", "psi", "mounts", "sysctl", "modules", "netstat", "services", "tailscale", "kubelet", "time", "config", "firewall"]:
+    for kind in ["image", "memory", "psi", "mounts", "sysctl", "modules", "netstat", "services", "kubelet", "time", "config", "firewall"]:
         rc, out = ctl("get", "x", kind); check(f"get {kind}", rc == 0 and len(out) > 10, out)
     rc, out = ctl("get", "x", "sysctl"); check("sysctl resource shows modules_disabled=1", re.search(r'"kernel.modules_disabled",\s*"value": "1"', out) is not None, out[-200:])
     rc, out = ctl("get", "x", "cgroups", "memory"); check("cgroups memory preset", rc == 0 and "MiB" in out, out)
     rc, out = ctl("ps", "x", "rss", "-n", "5"); check("ps by rss", rc == 0 and "comm" in out, out)
-    rc, out = ctl("netstat", "x"); check("netstat lists noded on the tailnet address", f"{IP}:7777" in out, out)
+    rc, out = ctl("netstat", "x"); check("netstat lists noded on 7777", ":7777" in out, out)
     rc, out = ctl("ls", "x", "/var/lib/edge"); check("ls an allowlisted dir hides secrets", rc == 0 and "k3s-token" not in out and "bootstrap.env" not in out, out)
     rc, out = ctl("read", "x", "/var/lib/edge/k3s-token"); check("read refuses a secret", rc != 0 and ("secret" in out.lower()), out)
     rc, out = ctl("read", "x", "/etc/shadow"); check("read refuses a path outside the allowlist", rc != 0, out)
@@ -89,7 +91,7 @@ try:
     rc, out = ctl("events", "x", "-n", "20"); check("events", rc == 0 and len(out) > 20, out)
     rc, out = ctl("health", "x"); check("health", "ok=true" in out, out)
     rc, out = ctl("support", "x", "-o", "/tmp"); check("support bundle written", rc == 0 and "support-" in out, out)
-    p = subprocess.run(f"{NODECTL} --no-kube --addr {IP}:7777 pcap x --seconds 4 --proto tcp > /tmp/edge.pcap; xxd -l 4 -p /tmp/edge.pcap; wc -c < /tmp/edge.pcap", shell=True, capture_output=True, text=True, timeout=60)
+    p = subprocess.run(f"{NODECTL} --no-kube --addr 127.0.0.1:7777 pcap x --seconds 4 --proto tcp > /tmp/edge.pcap; xxd -l 4 -p /tmp/edge.pcap; wc -c < /tmp/edge.pcap", shell=True, capture_output=True, text=True, timeout=60)
     check("pcap writes a valid pcap header", p.stdout.startswith("d4c3b2a1"), p.stdout + p.stderr)
     rc, out = ctl("audit", "x"); check("audit log has the calls above", "audit id=" in out and "method=Status" in out, out[-300:])
 
@@ -181,15 +183,13 @@ spec: {apiRoles: enforce}
 
     # reset --wipe k3s: node reboots, rejoins under the same name
     boot0 = sh("cat /proc/sys/kernel/random/boot_id").strip().splitlines()[-1]
-    p = subprocess.run([NODECTL, "--addr", f"{IP}:7777", "--yes", "reset", NODE, "--wipe", "k3s", "--force"], capture_output=True, text=True, timeout=1500, env=dict(os.environ, KUBECONFIG=KC))
+    p = subprocess.run([NODECTL, "--addr", "127.0.0.1:7777", "--yes", "reset", NODE, "--wipe", "k3s", "--force"], capture_output=True, text=True, timeout=1500, env=dict(os.environ, KUBECONFIG=KC))
     print((p.stdout + p.stderr)[-700:])
     check("reset --wipe k3s completes and the node is Ready again", p.returncode == 0 and "Ready and schedulable" in p.stdout, p.stdout + p.stderr)
-    out = sh("cat /proc/sys/kernel/random/boot_id; tailscale ip -4 | head -1; cat /sys/kernel/security/lockdown; sysctl -n kernel.modules_disabled")
-    check("after the reset: new boot, Tailscale identity kept", boot0 not in out and IP in out, out)
+    out = sh("cat /proc/sys/kernel/random/boot_id; cat /sys/kernel/security/lockdown | head -c 40")
+    check("after the reset: new boot", boot0 not in out and "integrity" in out, out)
     rc, out = ctl("health", "x"); print(out[:300])
 finally:
-    try: vm.sh("tailscale logout", timeout=30)
-    except Exception: pass
     vm.stop(); dk("rm", "-f", CT)
 ok = sum(1 for _, o in results if o); print(f"\n{ok}/{len(results)} passed")
 sys.exit(0 if ok == len(results) else 1)

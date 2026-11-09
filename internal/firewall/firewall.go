@@ -8,7 +8,9 @@ import (
 	"context"
 	"fmt"
 	"net/netip"
+	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -30,6 +32,23 @@ type Rule struct {
 
 // Baseline is what a node with no FirewallRule objects allows from anywhere.
 var Baseline = []Port{{53, "UDP"}, {53, "TCP"}, {80, "TCP"}, {443, "TCP"}, {41641, "UDP"}}
+
+// extraFromEnv reads EDGE_FIREWALL_EXTRA_PORTS ("7777/tcp,8080/udp"): additional baseline ports for environments where noded is
+// not reached over Tailscale (the KVM tests). Unset in production; invalid entries are ignored.
+func extraFromEnv() []Port {
+	var out []Port
+	for _, f := range strings.Split(os.Getenv("EDGE_FIREWALL_EXTRA_PORTS"), ",") {
+		n, proto, ok := strings.Cut(strings.TrimSpace(f), "/")
+		p, err := strconv.Atoi(n)
+		if !ok || err != nil || p < 1 || p > 65535 {
+			continue
+		}
+		if proto = strings.ToUpper(proto); proto == "TCP" || proto == "UDP" {
+			out = append(out, Port{p, proto})
+		}
+	}
+	return out
+}
 
 // TrustedIfaces are accepted whatever the rules say.
 var TrustedIfaces = []string{"lo", "tailscale0", "cni0", "flannel.1", "flannel-wg", "kube-bridge"}
@@ -90,7 +109,7 @@ func Build(rules []Rule, node string, labels map[string]string) (string, []error
 		}
 		allowed[key{pr, p.Port, src}] = true
 	}
-	for _, p := range Baseline {
+	for _, p := range append(append([]Port{}, Baseline...), extraFromEnv()...) {
 		add(p, "")
 	}
 	for _, r := range rules {

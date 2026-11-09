@@ -120,3 +120,11 @@ func TestApplyRevertsWhenVerificationFails(t *testing.T) {
 		t.Fatalf("the previous ruleset must be loaded again: %v", h.loaded)
 	}
 }
+
+func TestExtraBaselineFromEnv(t *testing.T) {
+	t.Setenv("EDGE_FIREWALL_EXTRA_PORTS", "7777/tcp, 8080/udp,bad,99999/tcp,22/sctp")
+	s, _ := Build(nil, "n", nil)
+	if !strings.Contains(s, "tcp dport 7777 accept") || !strings.Contains(s, "udp dport 8080 accept") || strings.Contains(s, "99999") || strings.Contains(s, "sctp") {
+		t.Fatal(s)
+	}
+}

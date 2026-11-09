@@ -15,5 +15,5 @@ sudo systemd-run --unit=edge-vm --uid="$(id -u)" --gid=kvm --collect -p MemoryMa
   qemu-system-x86_64 -name edge-vm -machine q35 -enable-kvm -cpu host -smp 2 -m 1024 \
   -drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE_4M.fd -drive if=pflash,format=raw,file="$vars" \
   -drive if=none,id=disk0,format=raw,file="$disk" -device virtio-blk-pci,drive=disk0 \
-  -netdev user,id=net0 -device virtio-net-pci,netdev=net0 \
+  -netdev user,id=net0,hostfwd=tcp:127.0.0.1:7777-:7777 -device virtio-net-pci,netdev=net0 \
   -display none -monitor none -serial tcp:127.0.0.1:4555,server,nowait

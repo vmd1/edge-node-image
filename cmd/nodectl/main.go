@@ -35,6 +35,7 @@ const usage = `usage: nodectl [--addr host:port] [--no-kube] [--yes] <command> [
   reset    <node> [--wipe k3s|all-var] [--keep-node-object] [--force] [--confirm N]   wipe /var, back to first boot (needs --yes)
   hard-reset <node> [--timeout 10m]   ask the platform adapter to power cycle it (needs --yes; for an unreachable noded)
   config   <node> show|validate -f F|diff -f F|set -f F [--ttl 4h]|clear   declarative node config
+  verify   <file>...                check GitHub build provenance attestations of release files (needs gh)
   debug    <node>                   kubectl debug node/<node>
 
 <node> is a Kubernetes node name (address looked up with kubectl), or use --addr to talk to one agent directly.
@@ -116,6 +117,20 @@ func run(ctx context.Context, e *env, args []string) error {
 		if len(rest) > 0 && rest[0] == "--all" {
 			return e.fleetHealth(ctx)
 		}
+	}
+	if cmd == "verify" {
+		// nodectl verify <release-file>...: check GitHub build provenance attestations (needs the gh CLI), before a rollout.
+		if err := need(rest, 1, "verify <file>..."); err != nil {
+			return err
+		}
+		for _, f := range rest {
+			c := exec.CommandContext(ctx, "gh", "attestation", "verify", f, "-R", "vmd1/edge-node-image")
+			c.Stdout, c.Stderr = os.Stdout, os.Stderr
+			if err := c.Run(); err != nil {
+				return fmt.Errorf("%s: attestation did not verify: %w", f, err)
+			}
+		}
+		return nil
 	}
 	if cmd == "debug" {
 		if err := need(rest, 1, "debug <node>"); err != nil {

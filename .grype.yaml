@@ -1,0 +1,4 @@
+# VEX / ignore list for scripts/make-sbom.sh. Add an entry only with a reason and a date to revisit:
+#   - vulnerability: CVE-2026-0000
+#     reason: "not reachable: <why>"   # revisit 2026-12-01
+ignore: []

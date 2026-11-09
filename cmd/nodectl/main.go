@@ -31,6 +31,7 @@ const usage = `usage: nodectl [--addr host:port] [--no-kube] [--yes] <command> [
   reboot   <node>                   drain, reboot, wait, uncordon                     (needs --yes)
   registry <node> show|set [--mirror URL] [--fallback URL]
   channel  <node> show|set <url>|reset   update source (https release directory)
+  verify   <file>...                check GitHub build provenance attestations of release files (needs gh)
   debug    <node>                   kubectl debug node/<node>
 
 <node> is a Kubernetes node name (address looked up with kubectl), or use --addr to talk to one agent directly.
@@ -95,6 +96,20 @@ func run(ctx context.Context, e *env, args []string) error {
 	cmd, rest := args[0], args[1:]
 	if cmd == "list" {
 		return list(ctx)
+	}
+	if cmd == "verify" {
+		// nodectl verify <release-file>...: check GitHub build provenance attestations (needs the gh CLI), before a rollout.
+		if err := need(rest, 1, "verify <file>..."); err != nil {
+			return err
+		}
+		for _, f := range rest {
+			c := exec.CommandContext(ctx, "gh", "attestation", "verify", f, "-R", "vmd1/edge-node-image")
+			c.Stdout, c.Stderr = os.Stdout, os.Stderr
+			if err := c.Run(); err != nil {
+				return fmt.Errorf("%s: attestation did not verify: %w", f, err)
+			}
+		}
+		return nil
 	}
 	if cmd == "debug" {
 		if err := need(rest, 1, "debug <node>"); err != nil {

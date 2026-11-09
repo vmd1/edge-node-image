@@ -1,0 +1,17 @@
+[Unit]
+Description=Disable kernel module loading once the node is healthy (kernel.modules_disabled=1, one-way until reboot)
+# Off with a flag file written by EdgeNodeConfig moduleLockdown: false (/var/lib/edge/config/module-lockdown).
+ConditionPathExists=!/var/lib/edge/config/module-lockdown
+After=edge-health.service k3s-agent.service systemd-modules-load.service
+Wants=edge-health.service
+
+[Service]
+Type=oneshot
+# give k3s time to create vxlan, bridges and the first iptables rules (all the modules it needs load in that window)
+ExecStartPre=/usr/bin/sleep 90
+ExecStart=/usr/lib/systemd/systemd-sysctl --prefix=kernel.modules_disabled /usr/lib/edge/lock-modules.conf
+NoNewPrivileges=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

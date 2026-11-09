@@ -9,6 +9,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"strings"
@@ -18,6 +19,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/vmd1/edge-node-image/internal/auth"
+	"github.com/vmd1/edge-node-image/internal/config"
 	"github.com/vmd1/edge-node-image/internal/server"
 )
 
@@ -41,6 +43,9 @@ func main() {
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Fatal(err)
+	}
+	if os.Getenv("NODED_CONFIG_AGENT") != "0" {
+		go runConfigAgent(ctx)
 	}
 	g := grpc.NewServer(server.Interceptors(a)...)
 	server.New(server.DefaultPaths(), server.ExecRunner{}).Register(g)
@@ -103,4 +108,45 @@ func tailscaleIPv4(ctx context.Context, sock string) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("no tailscale IPv4 address")
+}
+
+// runConfigAgent waits for k3s-agent to have joined (its kubelet credentials exist), then reconciles EdgeNodeConfig objects.
+func runConfigAgent(ctx context.Context) {
+	const agentDir = "/var/lib/rancher/k3s/agent"
+	for {
+		if _, err := os.Stat(agentDir + "/client-kubelet.crt"); err == nil {
+			break
+		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(15 * time.Second):
+		}
+	}
+	server, name := k3sConfigValue("server"), k3sConfigValue("node-name")
+	u, err := url.Parse(server)
+	if err != nil || u.Hostname() == "" || name == "" {
+		log.Printf("config agent: cannot read server/node-name from the k3s config (%q, %q)", server, name)
+		return
+	}
+	k, err := config.NewKube("https://"+net.JoinHostPort(u.Hostname(), "6443"), name, agentDir)
+	if err != nil {
+		log.Printf("config agent: %v", err)
+		return
+	}
+	a := &config.Agent{Host: &config.SysHost{Kube: k}, Store: config.Store{Path: "/var/lib/edge/config/saved.json"}}
+	config.Loop(ctx, k, a, &config.Overrides{Path: "/var/lib/edge/config/override.json"}, time.Minute)
+}
+
+func k3sConfigValue(key string) string {
+	b, err := os.ReadFile("/var/lib/edge/k3s-config.yaml")
+	if err != nil {
+		return ""
+	}
+	for _, l := range strings.Split(string(b), "\n") {
+		if v, ok := strings.CutPrefix(l, key+":"); ok {
+			return strings.Trim(strings.TrimSpace(v), `"'`)
+		}
+	}
+	return ""
 }

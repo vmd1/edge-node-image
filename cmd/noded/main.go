@@ -20,6 +20,7 @@ import (
 
 	"github.com/vmd1/edge-node-image/internal/auth"
 	"github.com/vmd1/edge-node-image/internal/config"
+	"github.com/vmd1/edge-node-image/internal/firewall"
 	"github.com/vmd1/edge-node-image/internal/server"
 )
 
@@ -119,6 +120,10 @@ func tailscaleIPv4(ctx context.Context, sock string) (string, error) {
 
 // runConfigAgent waits for k3s-agent to have joined (its kubelet credentials exist), then reconciles EdgeNodeConfig objects.
 func runConfigAgent(ctx context.Context) {
+	if os.Getenv("NODED_FIREWALL") != "off" {
+		name, _ := os.Hostname()
+		firewall.Boot(ctx, &firewall.SysHost{}, name) // last-known-good or the baseline, before the API is reachable
+	}
 	const agentDir = "/var/lib/rancher/k3s/agent"
 	for {
 		if _, err := os.Stat(agentDir + "/client-kubelet.crt"); err == nil {
@@ -140,6 +145,10 @@ func runConfigAgent(ctx context.Context) {
 	if err != nil {
 		log.Printf("config agent: %v", err)
 		return
+	}
+	if os.Getenv("NODED_FIREWALL") != "off" {
+		fh := &firewall.SysHost{Kube: k}
+		go firewall.Loop(ctx, k, fh, time.Minute)
 	}
 	a := &config.Agent{Host: &config.SysHost{Kube: k}, Store: config.Store{Path: "/var/lib/edge/config/saved.json"}}
 	config.Loop(ctx, k, a, &config.Overrides{Path: "/var/lib/edge/config/override.json"}, time.Minute)

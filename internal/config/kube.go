@@ -144,3 +144,13 @@ func (k *Kube) Report(ctx context.Context, state, hash, errMsg string) error {
 	patch, _ := json.Marshal(map[string]any{"metadata": map[string]any{"annotations": map[string]string{AnnState: state, AnnHash: hash, AnnError: errMsg}}})
 	return k.do(ctx, "PATCH", "/api/v1/nodes/"+url.PathEscape(k.NodeName)+"?fieldManager="+manager, "application/merge-patch+json", patch, nil)
 }
+
+// GetJSON reads any API path into out (used by the firewall agent for FirewallRule objects).
+func (k *Kube) GetJSON(ctx context.Context, path string, out any) error {
+	return k.do(ctx, "GET", path, "", nil, out)
+}
+
+// Patch merge-patches this node (annotations only, by convention) with the agent's field manager.
+func (k *Kube) Patch(ctx context.Context, patch []byte) error {
+	return k.do(ctx, "PATCH", "/api/v1/nodes/"+url.PathEscape(k.NodeName)+"?fieldManager="+manager, "application/merge-patch+json", patch, nil)
+}

@@ -61,6 +61,9 @@ func (s *Server) Inspect(ctx context.Context, req *pb.InspectRequest) (*pb.Inspe
 		v, err = st, e
 	case "config":
 		v, err = s.GetConfig(ctx, &pb.GetConfigRequest{})
+	case "firewall":
+		out, e := s.R.Run(ctx, "nft", "list", "table", "inet", "edge")
+		v, err = map[string]string{"nft": out}, e
 	case "boot":
 		out, e := s.R.Run(ctx, "bootctl", "status", "--no-pager")
 		v, err = map[string]string{"bootctl": out}, e
@@ -97,7 +100,7 @@ func (s *Server) Inspect(ctx context.Context, req *pb.InspectRequest) (*pb.Inspe
 		}
 		v = res
 	default:
-		return nil, status.Errorf(codes.InvalidArgument, "unknown kind %q (image, boot, memory, psi, mounts, sysctl, modules, processes, netstat, cgroups, services, tailscale, kubelet, time, config)", req.Kind)
+		return nil, status.Errorf(codes.InvalidArgument, "unknown kind %q (image, boot, memory, psi, mounts, sysctl, modules, processes, netstat, cgroups, services, tailscale, kubelet, time, config, firewall)", req.Kind)
 	}
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())

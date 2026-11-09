@@ -36,6 +36,14 @@ const (
 	Noded_ValidateConfig_FullMethodName      = "/noded.v1.Noded/ValidateConfig"
 	Noded_SetConfigOverride_FullMethodName   = "/noded.v1.Noded/SetConfigOverride"
 	Noded_ClearConfigOverride_FullMethodName = "/noded.v1.Noded/ClearConfigOverride"
+	Noded_Inspect_FullMethodName             = "/noded.v1.Noded/Inspect"
+	Noded_ListFiles_FullMethodName           = "/noded.v1.Noded/ListFiles"
+	Noded_ReadFile_FullMethodName            = "/noded.v1.Noded/ReadFile"
+	Noded_Service_FullMethodName             = "/noded.v1.Noded/Service"
+	Noded_Health_FullMethodName              = "/noded.v1.Noded/Health"
+	Noded_Events_FullMethodName              = "/noded.v1.Noded/Events"
+	Noded_Support_FullMethodName             = "/noded.v1.Noded/Support"
+	Noded_Pcap_FullMethodName                = "/noded.v1.Noded/Pcap"
 )
 
 // NodedClient is the client API for Noded service.
@@ -57,6 +65,15 @@ type NodedClient interface {
 	ValidateConfig(ctx context.Context, in *ValidateConfigRequest, opts ...grpc.CallOption) (*ValidateConfigResponse, error)
 	SetConfigOverride(ctx context.Context, in *SetConfigOverrideRequest, opts ...grpc.CallOption) (*SetConfigOverrideResponse, error)
 	ClearConfigOverride(ctx context.Context, in *ClearConfigOverrideRequest, opts ...grpc.CallOption) (*ClearConfigOverrideResponse, error)
+	// Read-only introspection (Phase 2.C): typed resources, allowlisted files, bounded streams.
+	Inspect(ctx context.Context, in *InspectRequest, opts ...grpc.CallOption) (*InspectResponse, error)
+	ListFiles(ctx context.Context, in *ListFilesRequest, opts ...grpc.CallOption) (*ListFilesResponse, error)
+	ReadFile(ctx context.Context, in *ReadFileRequest, opts ...grpc.CallOption) (*ReadFileResponse, error)
+	Service(ctx context.Context, in *ServiceRequest, opts ...grpc.CallOption) (*ServiceResponse, error)
+	Health(ctx context.Context, in *HealthRequest, opts ...grpc.CallOption) (*HealthResponse, error)
+	Events(ctx context.Context, in *EventsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogLine], error)
+	Support(ctx context.Context, in *SupportRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Chunk], error)
+	Pcap(ctx context.Context, in *PcapRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Chunk], error)
 }
 
 type nodedClient struct {
@@ -216,6 +233,113 @@ func (c *nodedClient) ClearConfigOverride(ctx context.Context, in *ClearConfigOv
 	return out, nil
 }
 
+func (c *nodedClient) Inspect(ctx context.Context, in *InspectRequest, opts ...grpc.CallOption) (*InspectResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(InspectResponse)
+	err := c.cc.Invoke(ctx, Noded_Inspect_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodedClient) ListFiles(ctx context.Context, in *ListFilesRequest, opts ...grpc.CallOption) (*ListFilesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListFilesResponse)
+	err := c.cc.Invoke(ctx, Noded_ListFiles_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodedClient) ReadFile(ctx context.Context, in *ReadFileRequest, opts ...grpc.CallOption) (*ReadFileResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReadFileResponse)
+	err := c.cc.Invoke(ctx, Noded_ReadFile_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodedClient) Service(ctx context.Context, in *ServiceRequest, opts ...grpc.CallOption) (*ServiceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ServiceResponse)
+	err := c.cc.Invoke(ctx, Noded_Service_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodedClient) Health(ctx context.Context, in *HealthRequest, opts ...grpc.CallOption) (*HealthResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(HealthResponse)
+	err := c.cc.Invoke(ctx, Noded_Health_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodedClient) Events(ctx context.Context, in *EventsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogLine], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &Noded_ServiceDesc.Streams[1], Noded_Events_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[EventsRequest, LogLine]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Noded_EventsClient = grpc.ServerStreamingClient[LogLine]
+
+func (c *nodedClient) Support(ctx context.Context, in *SupportRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Chunk], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &Noded_ServiceDesc.Streams[2], Noded_Support_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[SupportRequest, Chunk]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Noded_SupportClient = grpc.ServerStreamingClient[Chunk]
+
+func (c *nodedClient) Pcap(ctx context.Context, in *PcapRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Chunk], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &Noded_ServiceDesc.Streams[3], Noded_Pcap_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[PcapRequest, Chunk]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Noded_PcapClient = grpc.ServerStreamingClient[Chunk]
+
 // NodedServer is the server API for Noded service.
 // All implementations must embed UnimplementedNodedServer
 // for forward compatibility.
@@ -235,6 +359,15 @@ type NodedServer interface {
 	ValidateConfig(context.Context, *ValidateConfigRequest) (*ValidateConfigResponse, error)
 	SetConfigOverride(context.Context, *SetConfigOverrideRequest) (*SetConfigOverrideResponse, error)
 	ClearConfigOverride(context.Context, *ClearConfigOverrideRequest) (*ClearConfigOverrideResponse, error)
+	// Read-only introspection (Phase 2.C): typed resources, allowlisted files, bounded streams.
+	Inspect(context.Context, *InspectRequest) (*InspectResponse, error)
+	ListFiles(context.Context, *ListFilesRequest) (*ListFilesResponse, error)
+	ReadFile(context.Context, *ReadFileRequest) (*ReadFileResponse, error)
+	Service(context.Context, *ServiceRequest) (*ServiceResponse, error)
+	Health(context.Context, *HealthRequest) (*HealthResponse, error)
+	Events(*EventsRequest, grpc.ServerStreamingServer[LogLine]) error
+	Support(*SupportRequest, grpc.ServerStreamingServer[Chunk]) error
+	Pcap(*PcapRequest, grpc.ServerStreamingServer[Chunk]) error
 	mustEmbedUnimplementedNodedServer()
 }
 
@@ -286,6 +419,30 @@ func (UnimplementedNodedServer) SetConfigOverride(context.Context, *SetConfigOve
 }
 func (UnimplementedNodedServer) ClearConfigOverride(context.Context, *ClearConfigOverrideRequest) (*ClearConfigOverrideResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ClearConfigOverride not implemented")
+}
+func (UnimplementedNodedServer) Inspect(context.Context, *InspectRequest) (*InspectResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Inspect not implemented")
+}
+func (UnimplementedNodedServer) ListFiles(context.Context, *ListFilesRequest) (*ListFilesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListFiles not implemented")
+}
+func (UnimplementedNodedServer) ReadFile(context.Context, *ReadFileRequest) (*ReadFileResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReadFile not implemented")
+}
+func (UnimplementedNodedServer) Service(context.Context, *ServiceRequest) (*ServiceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Service not implemented")
+}
+func (UnimplementedNodedServer) Health(context.Context, *HealthRequest) (*HealthResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Health not implemented")
+}
+func (UnimplementedNodedServer) Events(*EventsRequest, grpc.ServerStreamingServer[LogLine]) error {
+	return status.Error(codes.Unimplemented, "method Events not implemented")
+}
+func (UnimplementedNodedServer) Support(*SupportRequest, grpc.ServerStreamingServer[Chunk]) error {
+	return status.Error(codes.Unimplemented, "method Support not implemented")
+}
+func (UnimplementedNodedServer) Pcap(*PcapRequest, grpc.ServerStreamingServer[Chunk]) error {
+	return status.Error(codes.Unimplemented, "method Pcap not implemented")
 }
 func (UnimplementedNodedServer) mustEmbedUnimplementedNodedServer() {}
 func (UnimplementedNodedServer) testEmbeddedByValue()               {}
@@ -553,6 +710,129 @@ func _Noded_ClearConfigOverride_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Noded_Inspect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InspectRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodedServer).Inspect(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Noded_Inspect_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodedServer).Inspect(ctx, req.(*InspectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Noded_ListFiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListFilesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodedServer).ListFiles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Noded_ListFiles_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodedServer).ListFiles(ctx, req.(*ListFilesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Noded_ReadFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReadFileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodedServer).ReadFile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Noded_ReadFile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodedServer).ReadFile(ctx, req.(*ReadFileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Noded_Service_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ServiceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodedServer).Service(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Noded_Service_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodedServer).Service(ctx, req.(*ServiceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Noded_Health_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HealthRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodedServer).Health(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Noded_Health_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodedServer).Health(ctx, req.(*HealthRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Noded_Events_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(EventsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(NodedServer).Events(m, &grpc.GenericServerStream[EventsRequest, LogLine]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Noded_EventsServer = grpc.ServerStreamingServer[LogLine]
+
+func _Noded_Support_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(SupportRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(NodedServer).Support(m, &grpc.GenericServerStream[SupportRequest, Chunk]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Noded_SupportServer = grpc.ServerStreamingServer[Chunk]
+
+func _Noded_Pcap_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(PcapRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(NodedServer).Pcap(m, &grpc.GenericServerStream[PcapRequest, Chunk]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Noded_PcapServer = grpc.ServerStreamingServer[Chunk]
+
 // Noded_ServiceDesc is the grpc.ServiceDesc for Noded service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -612,11 +892,46 @@ var Noded_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "ClearConfigOverride",
 			Handler:    _Noded_ClearConfigOverride_Handler,
 		},
+		{
+			MethodName: "Inspect",
+			Handler:    _Noded_Inspect_Handler,
+		},
+		{
+			MethodName: "ListFiles",
+			Handler:    _Noded_ListFiles_Handler,
+		},
+		{
+			MethodName: "ReadFile",
+			Handler:    _Noded_ReadFile_Handler,
+		},
+		{
+			MethodName: "Service",
+			Handler:    _Noded_Service_Handler,
+		},
+		{
+			MethodName: "Health",
+			Handler:    _Noded_Health_Handler,
+		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "Logs",
 			Handler:       _Noded_Logs_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "Events",
+			Handler:       _Noded_Events_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "Support",
+			Handler:       _Noded_Support_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "Pcap",
+			Handler:       _Noded_Pcap_Handler,
 			ServerStreams: true,
 		},
 	},

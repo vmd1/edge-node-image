@@ -1291,6 +1291,696 @@ func (*ClearConfigOverrideResponse) Descriptor() ([]byte, []int) {
 	return file_noded_proto_rawDescGZIP(), []int{25}
 }
 
+// kind: image, boot, memory, psi, mounts, sysctl, modules, processes, netstat, cgroups, services, tailscale, kubelet, time, config
+type InspectRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Kind          string                 `protobuf:"bytes,1,opt,name=kind,proto3" json:"kind,omitempty"`
+	Arg           string                 `protobuf:"bytes,2,opt,name=arg,proto3" json:"arg,omitempty"`
+	Limit         uint32                 `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InspectRequest) Reset() {
+	*x = InspectRequest{}
+	mi := &file_noded_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InspectRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InspectRequest) ProtoMessage() {}
+
+func (x *InspectRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noded_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InspectRequest.ProtoReflect.Descriptor instead.
+func (*InspectRequest) Descriptor() ([]byte, []int) {
+	return file_noded_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *InspectRequest) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *InspectRequest) GetArg() string {
+	if x != nil {
+		return x.Arg
+	}
+	return ""
+}
+
+func (x *InspectRequest) GetLimit() uint32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+type InspectResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Json          string                 `protobuf:"bytes,1,opt,name=json,proto3" json:"json,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InspectResponse) Reset() {
+	*x = InspectResponse{}
+	mi := &file_noded_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InspectResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InspectResponse) ProtoMessage() {}
+
+func (x *InspectResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noded_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InspectResponse.ProtoReflect.Descriptor instead.
+func (*InspectResponse) Descriptor() ([]byte, []int) {
+	return file_noded_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *InspectResponse) GetJson() string {
+	if x != nil {
+		return x.Json
+	}
+	return ""
+}
+
+type ListFilesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListFilesRequest) Reset() {
+	*x = ListFilesRequest{}
+	mi := &file_noded_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListFilesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListFilesRequest) ProtoMessage() {}
+
+func (x *ListFilesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noded_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListFilesRequest.ProtoReflect.Descriptor instead.
+func (*ListFilesRequest) Descriptor() ([]byte, []int) {
+	return file_noded_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *ListFilesRequest) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+type ListFilesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Json          string                 `protobuf:"bytes,1,opt,name=json,proto3" json:"json,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListFilesResponse) Reset() {
+	*x = ListFilesResponse{}
+	mi := &file_noded_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListFilesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListFilesResponse) ProtoMessage() {}
+
+func (x *ListFilesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noded_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListFilesResponse.ProtoReflect.Descriptor instead.
+func (*ListFilesResponse) Descriptor() ([]byte, []int) {
+	return file_noded_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *ListFilesResponse) GetJson() string {
+	if x != nil {
+		return x.Json
+	}
+	return ""
+}
+
+type ReadFileRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	MaxBytes      uint32                 `protobuf:"varint,2,opt,name=max_bytes,json=maxBytes,proto3" json:"max_bytes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReadFileRequest) Reset() {
+	*x = ReadFileRequest{}
+	mi := &file_noded_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReadFileRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReadFileRequest) ProtoMessage() {}
+
+func (x *ReadFileRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noded_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReadFileRequest.ProtoReflect.Descriptor instead.
+func (*ReadFileRequest) Descriptor() ([]byte, []int) {
+	return file_noded_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *ReadFileRequest) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *ReadFileRequest) GetMaxBytes() uint32 {
+	if x != nil {
+		return x.MaxBytes
+	}
+	return 0
+}
+
+type ReadFileResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Data          []byte                 `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReadFileResponse) Reset() {
+	*x = ReadFileResponse{}
+	mi := &file_noded_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReadFileResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReadFileResponse) ProtoMessage() {}
+
+func (x *ReadFileResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noded_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReadFileResponse.ProtoReflect.Descriptor instead.
+func (*ReadFileResponse) Descriptor() ([]byte, []int) {
+	return file_noded_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *ReadFileResponse) GetData() []byte {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+type ServiceRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Action        string                 `protobuf:"bytes,1,opt,name=action,proto3" json:"action,omitempty"`
+	Unit          string                 `protobuf:"bytes,2,opt,name=unit,proto3" json:"unit,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ServiceRequest) Reset() {
+	*x = ServiceRequest{}
+	mi := &file_noded_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ServiceRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ServiceRequest) ProtoMessage() {}
+
+func (x *ServiceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noded_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ServiceRequest.ProtoReflect.Descriptor instead.
+func (*ServiceRequest) Descriptor() ([]byte, []int) {
+	return file_noded_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *ServiceRequest) GetAction() string {
+	if x != nil {
+		return x.Action
+	}
+	return ""
+}
+
+func (x *ServiceRequest) GetUnit() string {
+	if x != nil {
+		return x.Unit
+	}
+	return ""
+}
+
+type ServiceResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Output        string                 `protobuf:"bytes,1,opt,name=output,proto3" json:"output,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ServiceResponse) Reset() {
+	*x = ServiceResponse{}
+	mi := &file_noded_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ServiceResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ServiceResponse) ProtoMessage() {}
+
+func (x *ServiceResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noded_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ServiceResponse.ProtoReflect.Descriptor instead.
+func (*ServiceResponse) Descriptor() ([]byte, []int) {
+	return file_noded_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *ServiceResponse) GetOutput() string {
+	if x != nil {
+		return x.Output
+	}
+	return ""
+}
+
+type HealthRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HealthRequest) Reset() {
+	*x = HealthRequest{}
+	mi := &file_noded_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HealthRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HealthRequest) ProtoMessage() {}
+
+func (x *HealthRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noded_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HealthRequest.ProtoReflect.Descriptor instead.
+func (*HealthRequest) Descriptor() ([]byte, []int) {
+	return file_noded_proto_rawDescGZIP(), []int{34}
+}
+
+type HealthResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+	Json          string                 `protobuf:"bytes,2,opt,name=json,proto3" json:"json,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HealthResponse) Reset() {
+	*x = HealthResponse{}
+	mi := &file_noded_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HealthResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HealthResponse) ProtoMessage() {}
+
+func (x *HealthResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noded_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HealthResponse.ProtoReflect.Descriptor instead.
+func (*HealthResponse) Descriptor() ([]byte, []int) {
+	return file_noded_proto_rawDescGZIP(), []int{35}
+}
+
+func (x *HealthResponse) GetOk() bool {
+	if x != nil {
+		return x.Ok
+	}
+	return false
+}
+
+func (x *HealthResponse) GetJson() string {
+	if x != nil {
+		return x.Json
+	}
+	return ""
+}
+
+type EventsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TailLines     uint32                 `protobuf:"varint,1,opt,name=tail_lines,json=tailLines,proto3" json:"tail_lines,omitempty"`
+	Follow        bool                   `protobuf:"varint,2,opt,name=follow,proto3" json:"follow,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EventsRequest) Reset() {
+	*x = EventsRequest{}
+	mi := &file_noded_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EventsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EventsRequest) ProtoMessage() {}
+
+func (x *EventsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noded_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EventsRequest.ProtoReflect.Descriptor instead.
+func (*EventsRequest) Descriptor() ([]byte, []int) {
+	return file_noded_proto_rawDescGZIP(), []int{36}
+}
+
+func (x *EventsRequest) GetTailLines() uint32 {
+	if x != nil {
+		return x.TailLines
+	}
+	return 0
+}
+
+func (x *EventsRequest) GetFollow() bool {
+	if x != nil {
+		return x.Follow
+	}
+	return false
+}
+
+type SupportRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SupportRequest) Reset() {
+	*x = SupportRequest{}
+	mi := &file_noded_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SupportRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SupportRequest) ProtoMessage() {}
+
+func (x *SupportRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noded_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SupportRequest.ProtoReflect.Descriptor instead.
+func (*SupportRequest) Descriptor() ([]byte, []int) {
+	return file_noded_proto_rawDescGZIP(), []int{37}
+}
+
+type Chunk struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Data          []byte                 `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Chunk) Reset() {
+	*x = Chunk{}
+	mi := &file_noded_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Chunk) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Chunk) ProtoMessage() {}
+
+func (x *Chunk) ProtoReflect() protoreflect.Message {
+	mi := &file_noded_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Chunk.ProtoReflect.Descriptor instead.
+func (*Chunk) Descriptor() ([]byte, []int) {
+	return file_noded_proto_rawDescGZIP(), []int{38}
+}
+
+func (x *Chunk) GetData() []byte {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+// A bounded capture: at most 120 s and 50 MB, one at a time. Filters are fields, not a BPF string.
+type PcapRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Iface         string                 `protobuf:"bytes,1,opt,name=iface,proto3" json:"iface,omitempty"`
+	Host          string                 `protobuf:"bytes,2,opt,name=host,proto3" json:"host,omitempty"`
+	Port          uint32                 `protobuf:"varint,3,opt,name=port,proto3" json:"port,omitempty"`
+	Proto         string                 `protobuf:"bytes,4,opt,name=proto,proto3" json:"proto,omitempty"`
+	Seconds       uint32                 `protobuf:"varint,5,opt,name=seconds,proto3" json:"seconds,omitempty"`
+	MaxBytes      uint32                 `protobuf:"varint,6,opt,name=max_bytes,json=maxBytes,proto3" json:"max_bytes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PcapRequest) Reset() {
+	*x = PcapRequest{}
+	mi := &file_noded_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PcapRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PcapRequest) ProtoMessage() {}
+
+func (x *PcapRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noded_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PcapRequest.ProtoReflect.Descriptor instead.
+func (*PcapRequest) Descriptor() ([]byte, []int) {
+	return file_noded_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *PcapRequest) GetIface() string {
+	if x != nil {
+		return x.Iface
+	}
+	return ""
+}
+
+func (x *PcapRequest) GetHost() string {
+	if x != nil {
+		return x.Host
+	}
+	return ""
+}
+
+func (x *PcapRequest) GetPort() uint32 {
+	if x != nil {
+		return x.Port
+	}
+	return 0
+}
+
+func (x *PcapRequest) GetProto() string {
+	if x != nil {
+		return x.Proto
+	}
+	return ""
+}
+
+func (x *PcapRequest) GetSeconds() uint32 {
+	if x != nil {
+		return x.Seconds
+	}
+	return 0
+}
+
+func (x *PcapRequest) GetMaxBytes() uint32 {
+	if x != nil {
+		return x.MaxBytes
+	}
+	return 0
+}
+
 var File_noded_proto protoreflect.FileDescriptor
 
 const file_noded_proto_rawDesc = "" +
@@ -1372,7 +2062,45 @@ const file_noded_proto_rawDesc = "" +
 	"\x19SetConfigOverrideResponse\x12\x18\n" +
 	"\aexpires\x18\x01 \x01(\tR\aexpires\"\x1c\n" +
 	"\x1aClearConfigOverrideRequest\"\x1d\n" +
-	"\x1bClearConfigOverrideResponse2\xb2\b\n" +
+	"\x1bClearConfigOverrideResponse\"L\n" +
+	"\x0eInspectRequest\x12\x12\n" +
+	"\x04kind\x18\x01 \x01(\tR\x04kind\x12\x10\n" +
+	"\x03arg\x18\x02 \x01(\tR\x03arg\x12\x14\n" +
+	"\x05limit\x18\x03 \x01(\rR\x05limit\"%\n" +
+	"\x0fInspectResponse\x12\x12\n" +
+	"\x04json\x18\x01 \x01(\tR\x04json\"&\n" +
+	"\x10ListFilesRequest\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"'\n" +
+	"\x11ListFilesResponse\x12\x12\n" +
+	"\x04json\x18\x01 \x01(\tR\x04json\"B\n" +
+	"\x0fReadFileRequest\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1b\n" +
+	"\tmax_bytes\x18\x02 \x01(\rR\bmaxBytes\"&\n" +
+	"\x10ReadFileResponse\x12\x12\n" +
+	"\x04data\x18\x01 \x01(\fR\x04data\"<\n" +
+	"\x0eServiceRequest\x12\x16\n" +
+	"\x06action\x18\x01 \x01(\tR\x06action\x12\x12\n" +
+	"\x04unit\x18\x02 \x01(\tR\x04unit\")\n" +
+	"\x0fServiceResponse\x12\x16\n" +
+	"\x06output\x18\x01 \x01(\tR\x06output\"\x0f\n" +
+	"\rHealthRequest\"4\n" +
+	"\x0eHealthResponse\x12\x0e\n" +
+	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x12\n" +
+	"\x04json\x18\x02 \x01(\tR\x04json\"F\n" +
+	"\rEventsRequest\x12\x1d\n" +
+	"\n" +
+	"tail_lines\x18\x01 \x01(\rR\ttailLines\x12\x16\n" +
+	"\x06follow\x18\x02 \x01(\bR\x06follow\"\x10\n" +
+	"\x0eSupportRequest\"\x1b\n" +
+	"\x05Chunk\x12\x12\n" +
+	"\x04data\x18\x01 \x01(\fR\x04data\"\x98\x01\n" +
+	"\vPcapRequest\x12\x14\n" +
+	"\x05iface\x18\x01 \x01(\tR\x05iface\x12\x12\n" +
+	"\x04host\x18\x02 \x01(\tR\x04host\x12\x12\n" +
+	"\x04port\x18\x03 \x01(\rR\x04port\x12\x14\n" +
+	"\x05proto\x18\x04 \x01(\tR\x05proto\x12\x18\n" +
+	"\aseconds\x18\x05 \x01(\rR\aseconds\x12\x1b\n" +
+	"\tmax_bytes\x18\x06 \x01(\rR\bmaxBytes2\x9a\f\n" +
 	"\x05Noded\x12;\n" +
 	"\x06Status\x12\x17.noded.v1.StatusRequest\x1a\x18.noded.v1.StatusResponse\x122\n" +
 	"\x04Logs\x12\x15.noded.v1.LogsRequest\x1a\x11.noded.v1.LogLine0\x01\x12J\n" +
@@ -1387,7 +2115,15 @@ const file_noded_proto_rawDesc = "" +
 	"\tGetConfig\x12\x1a.noded.v1.GetConfigRequest\x1a\x15.noded.v1.ConfigState\x12S\n" +
 	"\x0eValidateConfig\x12\x1f.noded.v1.ValidateConfigRequest\x1a .noded.v1.ValidateConfigResponse\x12\\\n" +
 	"\x11SetConfigOverride\x12\".noded.v1.SetConfigOverrideRequest\x1a#.noded.v1.SetConfigOverrideResponse\x12b\n" +
-	"\x13ClearConfigOverride\x12$.noded.v1.ClearConfigOverrideRequest\x1a%.noded.v1.ClearConfigOverrideResponseB-Z+github.com/vmd1/edge-node-image/gen/nodedv1b\x06proto3"
+	"\x13ClearConfigOverride\x12$.noded.v1.ClearConfigOverrideRequest\x1a%.noded.v1.ClearConfigOverrideResponse\x12>\n" +
+	"\aInspect\x12\x18.noded.v1.InspectRequest\x1a\x19.noded.v1.InspectResponse\x12D\n" +
+	"\tListFiles\x12\x1a.noded.v1.ListFilesRequest\x1a\x1b.noded.v1.ListFilesResponse\x12A\n" +
+	"\bReadFile\x12\x19.noded.v1.ReadFileRequest\x1a\x1a.noded.v1.ReadFileResponse\x12>\n" +
+	"\aService\x12\x18.noded.v1.ServiceRequest\x1a\x19.noded.v1.ServiceResponse\x12;\n" +
+	"\x06Health\x12\x17.noded.v1.HealthRequest\x1a\x18.noded.v1.HealthResponse\x126\n" +
+	"\x06Events\x12\x17.noded.v1.EventsRequest\x1a\x11.noded.v1.LogLine0\x01\x126\n" +
+	"\aSupport\x12\x18.noded.v1.SupportRequest\x1a\x0f.noded.v1.Chunk0\x01\x120\n" +
+	"\x04Pcap\x12\x15.noded.v1.PcapRequest\x1a\x0f.noded.v1.Chunk0\x01B-Z+github.com/vmd1/edge-node-image/gen/nodedv1b\x06proto3"
 
 var (
 	file_noded_proto_rawDescOnce sync.Once
@@ -1401,7 +2137,7 @@ func file_noded_proto_rawDescGZIP() []byte {
 	return file_noded_proto_rawDescData
 }
 
-var file_noded_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
+var file_noded_proto_msgTypes = make([]protoimpl.MessageInfo, 41)
 var file_noded_proto_goTypes = []any{
 	(*StatusRequest)(nil),               // 0: noded.v1.StatusRequest
 	(*StatusResponse)(nil),              // 1: noded.v1.StatusResponse
@@ -1429,10 +2165,24 @@ var file_noded_proto_goTypes = []any{
 	(*SetConfigOverrideResponse)(nil),   // 23: noded.v1.SetConfigOverrideResponse
 	(*ClearConfigOverrideRequest)(nil),  // 24: noded.v1.ClearConfigOverrideRequest
 	(*ClearConfigOverrideResponse)(nil), // 25: noded.v1.ClearConfigOverrideResponse
-	nil,                                 // 26: noded.v1.StatusResponse.UnitsEntry
+	(*InspectRequest)(nil),              // 26: noded.v1.InspectRequest
+	(*InspectResponse)(nil),             // 27: noded.v1.InspectResponse
+	(*ListFilesRequest)(nil),            // 28: noded.v1.ListFilesRequest
+	(*ListFilesResponse)(nil),           // 29: noded.v1.ListFilesResponse
+	(*ReadFileRequest)(nil),             // 30: noded.v1.ReadFileRequest
+	(*ReadFileResponse)(nil),            // 31: noded.v1.ReadFileResponse
+	(*ServiceRequest)(nil),              // 32: noded.v1.ServiceRequest
+	(*ServiceResponse)(nil),             // 33: noded.v1.ServiceResponse
+	(*HealthRequest)(nil),               // 34: noded.v1.HealthRequest
+	(*HealthResponse)(nil),              // 35: noded.v1.HealthResponse
+	(*EventsRequest)(nil),               // 36: noded.v1.EventsRequest
+	(*SupportRequest)(nil),              // 37: noded.v1.SupportRequest
+	(*Chunk)(nil),                       // 38: noded.v1.Chunk
+	(*PcapRequest)(nil),                 // 39: noded.v1.PcapRequest
+	nil,                                 // 40: noded.v1.StatusResponse.UnitsEntry
 }
 var file_noded_proto_depIdxs = []int32{
-	26, // 0: noded.v1.StatusResponse.units:type_name -> noded.v1.StatusResponse.UnitsEntry
+	40, // 0: noded.v1.StatusResponse.units:type_name -> noded.v1.StatusResponse.UnitsEntry
 	0,  // 1: noded.v1.Noded.Status:input_type -> noded.v1.StatusRequest
 	2,  // 2: noded.v1.Noded.Logs:input_type -> noded.v1.LogsRequest
 	4,  // 3: noded.v1.Noded.CheckUpdate:input_type -> noded.v1.CheckUpdateRequest
@@ -1447,22 +2197,38 @@ var file_noded_proto_depIdxs = []int32{
 	20, // 12: noded.v1.Noded.ValidateConfig:input_type -> noded.v1.ValidateConfigRequest
 	22, // 13: noded.v1.Noded.SetConfigOverride:input_type -> noded.v1.SetConfigOverrideRequest
 	24, // 14: noded.v1.Noded.ClearConfigOverride:input_type -> noded.v1.ClearConfigOverrideRequest
-	1,  // 15: noded.v1.Noded.Status:output_type -> noded.v1.StatusResponse
-	3,  // 16: noded.v1.Noded.Logs:output_type -> noded.v1.LogLine
-	5,  // 17: noded.v1.Noded.CheckUpdate:output_type -> noded.v1.CheckUpdateResponse
-	7,  // 18: noded.v1.Noded.StageUpdate:output_type -> noded.v1.StageUpdateResponse
-	9,  // 19: noded.v1.Noded.GetUpdateConfig:output_type -> noded.v1.UpdateConfig
-	10, // 20: noded.v1.Noded.SetUpdateConfig:output_type -> noded.v1.SetUpdateConfigResponse
-	12, // 21: noded.v1.Noded.Reboot:output_type -> noded.v1.RebootResponse
-	14, // 22: noded.v1.Noded.SetBootSlot:output_type -> noded.v1.SetBootSlotResponse
-	16, // 23: noded.v1.Noded.GetRegistryConfig:output_type -> noded.v1.RegistryConfig
-	17, // 24: noded.v1.Noded.SetRegistryConfig:output_type -> noded.v1.SetRegistryConfigResponse
-	19, // 25: noded.v1.Noded.GetConfig:output_type -> noded.v1.ConfigState
-	21, // 26: noded.v1.Noded.ValidateConfig:output_type -> noded.v1.ValidateConfigResponse
-	23, // 27: noded.v1.Noded.SetConfigOverride:output_type -> noded.v1.SetConfigOverrideResponse
-	25, // 28: noded.v1.Noded.ClearConfigOverride:output_type -> noded.v1.ClearConfigOverrideResponse
-	15, // [15:29] is the sub-list for method output_type
-	1,  // [1:15] is the sub-list for method input_type
+	26, // 15: noded.v1.Noded.Inspect:input_type -> noded.v1.InspectRequest
+	28, // 16: noded.v1.Noded.ListFiles:input_type -> noded.v1.ListFilesRequest
+	30, // 17: noded.v1.Noded.ReadFile:input_type -> noded.v1.ReadFileRequest
+	32, // 18: noded.v1.Noded.Service:input_type -> noded.v1.ServiceRequest
+	34, // 19: noded.v1.Noded.Health:input_type -> noded.v1.HealthRequest
+	36, // 20: noded.v1.Noded.Events:input_type -> noded.v1.EventsRequest
+	37, // 21: noded.v1.Noded.Support:input_type -> noded.v1.SupportRequest
+	39, // 22: noded.v1.Noded.Pcap:input_type -> noded.v1.PcapRequest
+	1,  // 23: noded.v1.Noded.Status:output_type -> noded.v1.StatusResponse
+	3,  // 24: noded.v1.Noded.Logs:output_type -> noded.v1.LogLine
+	5,  // 25: noded.v1.Noded.CheckUpdate:output_type -> noded.v1.CheckUpdateResponse
+	7,  // 26: noded.v1.Noded.StageUpdate:output_type -> noded.v1.StageUpdateResponse
+	9,  // 27: noded.v1.Noded.GetUpdateConfig:output_type -> noded.v1.UpdateConfig
+	10, // 28: noded.v1.Noded.SetUpdateConfig:output_type -> noded.v1.SetUpdateConfigResponse
+	12, // 29: noded.v1.Noded.Reboot:output_type -> noded.v1.RebootResponse
+	14, // 30: noded.v1.Noded.SetBootSlot:output_type -> noded.v1.SetBootSlotResponse
+	16, // 31: noded.v1.Noded.GetRegistryConfig:output_type -> noded.v1.RegistryConfig
+	17, // 32: noded.v1.Noded.SetRegistryConfig:output_type -> noded.v1.SetRegistryConfigResponse
+	19, // 33: noded.v1.Noded.GetConfig:output_type -> noded.v1.ConfigState
+	21, // 34: noded.v1.Noded.ValidateConfig:output_type -> noded.v1.ValidateConfigResponse
+	23, // 35: noded.v1.Noded.SetConfigOverride:output_type -> noded.v1.SetConfigOverrideResponse
+	25, // 36: noded.v1.Noded.ClearConfigOverride:output_type -> noded.v1.ClearConfigOverrideResponse
+	27, // 37: noded.v1.Noded.Inspect:output_type -> noded.v1.InspectResponse
+	29, // 38: noded.v1.Noded.ListFiles:output_type -> noded.v1.ListFilesResponse
+	31, // 39: noded.v1.Noded.ReadFile:output_type -> noded.v1.ReadFileResponse
+	33, // 40: noded.v1.Noded.Service:output_type -> noded.v1.ServiceResponse
+	35, // 41: noded.v1.Noded.Health:output_type -> noded.v1.HealthResponse
+	3,  // 42: noded.v1.Noded.Events:output_type -> noded.v1.LogLine
+	38, // 43: noded.v1.Noded.Support:output_type -> noded.v1.Chunk
+	38, // 44: noded.v1.Noded.Pcap:output_type -> noded.v1.Chunk
+	23, // [23:45] is the sub-list for method output_type
+	1,  // [1:23] is the sub-list for method input_type
 	1,  // [1:1] is the sub-list for extension type_name
 	1,  // [1:1] is the sub-list for extension extendee
 	0,  // [0:1] is the sub-list for field type_name
@@ -1479,7 +2245,7 @@ func file_noded_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_noded_proto_rawDesc), len(file_noded_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   27,
+			NumMessages:   41,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

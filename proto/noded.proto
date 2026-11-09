@@ -22,6 +22,15 @@ service Noded {
   rpc ValidateConfig(ValidateConfigRequest) returns (ValidateConfigResponse);
   rpc SetConfigOverride(SetConfigOverrideRequest) returns (SetConfigOverrideResponse);
   rpc ClearConfigOverride(ClearConfigOverrideRequest) returns (ClearConfigOverrideResponse);
+  // Read-only introspection (Phase 2.C): typed resources, allowlisted files, bounded streams.
+  rpc Inspect(InspectRequest) returns (InspectResponse);
+  rpc ListFiles(ListFilesRequest) returns (ListFilesResponse);
+  rpc ReadFile(ReadFileRequest) returns (ReadFileResponse);
+  rpc Service(ServiceRequest) returns (ServiceResponse);
+  rpc Health(HealthRequest) returns (HealthResponse);
+  rpc Events(EventsRequest) returns (stream LogLine);
+  rpc Support(SupportRequest) returns (stream Chunk);
+  rpc Pcap(PcapRequest) returns (stream Chunk);
 }
 
 message StatusRequest {}
@@ -89,3 +98,20 @@ message SetConfigOverrideRequest { string spec_json = 1; uint32 ttl_seconds = 2;
 message SetConfigOverrideResponse { string expires = 1; }
 message ClearConfigOverrideRequest {}
 message ClearConfigOverrideResponse {}
+
+// kind: image, boot, memory, psi, mounts, sysctl, modules, processes, netstat, cgroups, services, tailscale, kubelet, time, config
+message InspectRequest { string kind = 1; string arg = 2; uint32 limit = 3; }   // arg: sort for processes, preset for cgroups, unit for services
+message InspectResponse { string json = 1; }
+message ListFilesRequest { string path = 1; }
+message ListFilesResponse { string json = 1; }
+message ReadFileRequest { string path = 1; uint32 max_bytes = 2; }
+message ReadFileResponse { bytes data = 1; }
+message ServiceRequest { string action = 1; string unit = 2; }   // status | start | stop | restart (allowlisted units)
+message ServiceResponse { string output = 1; }
+message HealthRequest {}
+message HealthResponse { bool ok = 1; string json = 2; }
+message EventsRequest { uint32 tail_lines = 1; bool follow = 2; }
+message SupportRequest {}
+message Chunk { bytes data = 1; }
+// A bounded capture: at most 120 s and 50 MB, one at a time. Filters are fields, not a BPF string.
+message PcapRequest { string iface = 1; string host = 2; uint32 port = 3; string proto = 4; uint32 seconds = 5; uint32 max_bytes = 6; }

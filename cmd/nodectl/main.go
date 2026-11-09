@@ -35,7 +35,7 @@ const usage = `usage: nodectl [--addr host:port] [--no-kube] [--yes] <command> [
   debug    <node>                   kubectl debug node/<node>
 
 <node> is a Kubernetes node name (address looked up with kubectl), or use --addr to talk to one agent directly.
-`
+` + introUsage
 
 type env struct {
 	addr   string
@@ -97,6 +97,21 @@ func run(ctx context.Context, e *env, args []string) error {
 	if cmd == "list" {
 		return list(ctx)
 	}
+	switch cmd {
+	case "dashboard":
+		return e.dashboard(ctx)
+	case "completion":
+		if err := need(rest, 1, "completion bash|zsh"); err != nil {
+			return err
+		}
+		return completion(rest[0])
+	case "support":
+		return e.support(ctx, rest)
+	case "health":
+		if len(rest) > 0 && rest[0] == "--all" {
+			return e.fleetHealth(ctx)
+		}
+	}
 	if cmd == "debug" {
 		if err := need(rest, 1, "debug <node>"); err != nil {
 			return err
@@ -117,6 +132,9 @@ func run(ctx context.Context, e *env, args []string) error {
 	cctx, cancel := context.WithTimeout(ctx, 15*time.Minute)
 	defer cancel()
 
+	if handled, err := introspect(cctx, cmd, node, cl, rest); handled {
+		return err
+	}
 	switch cmd {
 	case "status":
 		return status(cctx, cl)

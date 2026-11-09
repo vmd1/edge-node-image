@@ -9,6 +9,9 @@ mkdir -p "$out"; mnt=$(mktemp -d)
 cleanup() { sudo umount "$mnt" 2>/dev/null || true; rmdir "$mnt" 2>/dev/null || true; }
 trap cleanup EXIT
 sudo mount -o loop,ro "$root" "$mnt"
-syft "dir:$mnt" --source-name edge-node --source-version "$ver" -o "spdx-json=$out/edge-node_${ver}.spdx.json"
-syft "dir:$mnt" -o "table=$out/edge-node_${ver}.packages.txt" >/dev/null
-grype "sbom:$out/edge-node_${ver}.spdx.json" -c .grype.yaml --only-fixed --fail-on critical -o table | tee "$out/edge-node_${ver}.vulns.txt"
+SYFT=$(command -v syft); GRYPE="${GRYPE:-$(command -v grype)}"
+# root reads the mounted tree (it holds root-only directories); the outputs are handed back to the caller
+sudo "$SYFT" "dir:$mnt" --source-name edge-node --source-version "$ver" -o "spdx-json=$out/edge-node_${ver}.spdx.json" -q
+sudo "$SYFT" "dir:$mnt" -o "table=$out/edge-node_${ver}.packages.txt" -q >/dev/null
+sudo chown "$(id -u):$(id -g)" "$out"/edge-node_"${ver}".*
+"$GRYPE" "sbom:$out/edge-node_${ver}.spdx.json" -c .grype.yaml --only-fixed --fail-on critical -o table | tee "$out/edge-node_${ver}.vulns.txt"

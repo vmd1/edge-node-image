@@ -78,6 +78,15 @@ func Main(ctx context.Context, prog string, args []string) int {
 	return 0
 }
 
+// rpcTimeout bounds one agent call (a staged download included). NODECTL_RPC_TIMEOUT (a Go duration, for example 60m) raises it for
+// a node whose disk or CPU is slow; the default is 15 minutes.
+func rpcTimeout() time.Duration {
+	if d, err := time.ParseDuration(os.Getenv("NODECTL_RPC_TIMEOUT")); err == nil && d > 0 {
+		return d
+	}
+	return 15 * time.Minute
+}
+
 func kubectl(ctx context.Context, args ...string) (string, error) {
 	out, err := exec.CommandContext(ctx, "kubectl", args...).CombinedOutput()
 	return strings.TrimSpace(string(out)), err
@@ -159,7 +168,7 @@ func run(ctx context.Context, e *env, args []string) error {
 		return err
 	}
 	defer closeFn()
-	cctx, cancel := context.WithTimeout(ctx, 15*time.Minute)
+	cctx, cancel := context.WithTimeout(ctx, rpcTimeout())
 	defer cancel()
 
 	switch cmd {

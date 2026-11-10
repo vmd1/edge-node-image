@@ -1,4 +1,18 @@
-# VEX / ignore list for scripts/make-sbom.sh. Add an entry only with a reason and a date to revisit:
-#   - vulnerability: CVE-2026-0000
-#     reason: "not reachable: <why>"   # revisit 2026-12-01
-ignore: []
+# VEX / ignore list for scripts/make-sbom.sh. Add an entry only with a reason and a date to revisit.
+# Entries are scoped to one package and version so a newer version, or a different package, is still gated.
+# Added 2026-11-10 for 0.3.0-rc1. None of these was verified as patched or unreachable one CVE at a time: they are
+# findings that cannot be fixed from this repo today, accepted until the revisit date.
+ignore:
+  # Debian components detected from the binary's version string ("UnknownPackage"). Debian ships security fixes as patches
+  # without changing the upstream version, so the scanner's "fixed in <newer upstream>" cannot be satisfied by any rebuild.
+  # Each build already installs the newest Debian trixie packages. revisit 2026-12-01: compare against the Debian tracker.
+  - package: {name: curl, version: 8.14.1, type: UnknownPackage}
+    reason: "Debian-patched, version string is upstream's; no fixed Debian version to move to from this repo"
+  - package: {name: openssl, version: 3.5.7, type: UnknownPackage}
+    reason: "Debian-patched, version string is upstream's; no fixed Debian version to move to from this repo"
+  - package: {name: linux-kernel, version: 6.12.116+deb13-amd64, type: UnknownPackage}
+    reason: "Debian 6.12 LTS kernel with backports; the 'fixed in' versions are other upstream series (6.18, 6.19, 7.0). Image is lockdown=integrity, modules locked after boot"
+  # k3s v1.35.5 is built with Go 1.25.9. The control plane runs v1.35.5 and a kubelet must not be newer than the API server,
+  # so k3s moves only together with the cluster. revisit with the next cluster upgrade.
+  - package: {name: stdlib, version: go1.25.9, type: go-module}
+    reason: "inside the pinned k3s binary; upgrade k3s together with the control plane"

@@ -26,6 +26,8 @@ jobs:
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: write
+      id-token: write       # build provenance attestations
+      attestations: write
     env:
       EDGE_REL_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
     steps:
@@ -49,6 +51,27 @@ jobs:
         env:
           GPG_PASSPHRASE: ${{ secrets.RELEASE_GPG_PASSPHRASE }}
         run: scripts/make-release.sh mkosi.output "${EDGE_REL_VERSION#v}" "release-${{ matrix.arch }}" "$RELEASE_KEY"
+      - name: SBOM tooling (syft)
+        if: github.event_name != 'workflow_dispatch' || inputs.profile == ''
+        uses: anchore/sbom-action/download-syft@v0
+      - name: vulnerability scanner (grype)
+        id: grype
+        if: github.event_name != 'workflow_dispatch' || inputs.profile == ''
+        uses: anchore/scan-action/download-grype@v7
+      - name: SBOM and vulnerability scan (not for debug-profile test builds)
+        if: github.event_name != 'workflow_dispatch' || inputs.profile == ''
+        env:
+          GRYPE: ${{ steps.grype.outputs.cmd }}
+        run: |
+          root=$(ls mkosi.output/edge-node.root-*.raw | grep -v verity | head -1)
+          scripts/make-sbom.sh "$root" "release-${{ matrix.arch }}" "${EDGE_REL_VERSION#v}"
+          # the root hash is recorded so a rebuild of the same commit can be compared
+          grep -a -o 'roothash=[0-9a-f]\{64\}' mkosi.output/edge-node.efi | head -1 | cut -d= -f2 > "release-${{ matrix.arch }}/ROOTHASH"
+      - name: build provenance attestation
+        if: github.event_name != 'workflow_dispatch' || inputs.profile == ''
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: release-${{ matrix.arch }}/*
       - name: compress the disk image (debug-profile runs, for VM tests)
         if: github.event_name == 'workflow_dispatch' && inputs.profile != ''
         run: zstd -T0 -3 -f mkosi.output/edge-node.raw -o disk-${{ matrix.arch }}.raw.zst
@@ -67,12 +90,14 @@ jobs:
           name: release-${{ matrix.arch }}
           path: release-${{ matrix.arch }}
           retention-days: 7
-      - name: publish to stable-${{ matrix.arch }}
+      - name: publish to the channel (candidate for -rc tags, stable otherwise)
         if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag="stable-${{ matrix.arch }}"
+          # a tag like v0.3.0-rc1 goes to candidate-<arch>, which only the canary follows (nodectl channel); promote.yml copies
+          # it to stable-<arch> after the soak
+          case "${GITHUB_REF_NAME}" in *-rc*) tag="candidate-${{ matrix.arch }}";; *) tag="stable-${{ matrix.arch }}";; esac
           gh release view "$tag" >/dev/null 2>&1 || gh release create "$tag" --title "$tag" --notes "Rolling channel followed by nodes. Do not download by hand." --prerelease
           # replace the channel contents: nodes read SHA256SUMS in this directory. Upload first (SHA256SUMS last, so
           # it only ever lists files that exist), then drop assets that are no longer part of the release.

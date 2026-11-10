@@ -31,10 +31,15 @@ const usage = `usage: nodectl [--addr host:port] [--no-kube] [--yes] <command> [
   reboot   <node>                   drain, reboot, wait, uncordon                     (needs --yes)
   registry <node> show|set [--mirror URL] [--fallback URL]
   channel  <node> show|set <url>|reset   update source (https release directory)
+  rollout  [version] [--canary N] [--settle 10m] [--from N] [--config]   rolling update with health gates (needs --yes)
+  reset    <node> [--wipe k3s|all-var] [--keep-node-object] [--force] [--confirm N]   wipe /var, back to first boot (needs --yes)
+  hard-reset <node> [--timeout 10m]   ask the platform adapter to power cycle it (needs --yes; for an unreachable noded)
+  config   <node> show|validate -f F|diff -f F|set -f F [--ttl 4h]|clear   declarative node config
+  verify   <file>...                check GitHub build provenance attestations of release files (needs gh)
   debug    <node>                   kubectl debug node/<node>
 
 <node> is a Kubernetes node name (address looked up with kubectl), or use --addr to talk to one agent directly.
-`
+` + introUsage
 
 type env struct {
 	addr   string
@@ -96,6 +101,37 @@ func run(ctx context.Context, e *env, args []string) error {
 	if cmd == "list" {
 		return list(ctx)
 	}
+	switch cmd {
+	case "dashboard":
+		return e.dashboard(ctx)
+	case "completion":
+		if err := need(rest, 1, "completion bash|zsh"); err != nil {
+			return err
+		}
+		return completion(rest[0])
+	case "support":
+		return e.support(ctx, rest)
+	case "rollout":
+		return e.rollout(ctx, rest)
+	case "health":
+		if len(rest) > 0 && rest[0] == "--all" {
+			return e.fleetHealth(ctx)
+		}
+	}
+	if cmd == "verify" {
+		// nodectl verify <release-file>...: check GitHub build provenance attestations (needs the gh CLI), before a rollout.
+		if err := need(rest, 1, "verify <file>..."); err != nil {
+			return err
+		}
+		for _, f := range rest {
+			c := exec.CommandContext(ctx, "gh", "attestation", "verify", f, "-R", "vmd1/edge-node-image")
+			c.Stdout, c.Stderr = os.Stdout, os.Stderr
+			if err := c.Run(); err != nil {
+				return fmt.Errorf("%s: attestation did not verify: %w", f, err)
+			}
+		}
+		return nil
+	}
 	if cmd == "debug" {
 		if err := need(rest, 1, "debug <node>"); err != nil {
 			return err
@@ -116,6 +152,15 @@ func run(ctx context.Context, e *env, args []string) error {
 	cctx, cancel := context.WithTimeout(ctx, 15*time.Minute)
 	defer cancel()
 
+	switch cmd {
+	case "reset":
+		return e.reset(ctx, node, cl, rest)
+	case "hard-reset":
+		return e.hardReset(ctx, node, rest)
+	}
+	if handled, err := introspect(cctx, cmd, node, cl, rest); handled {
+		return err
+	}
 	switch cmd {
 	case "status":
 		return status(cctx, cl)
@@ -164,6 +209,8 @@ func run(ctx context.Context, e *env, args []string) error {
 		return registry(cctx, cl, rest)
 	case "channel":
 		return channel(cctx, cl, rest)
+	case "config":
+		return configCmd(cctx, cl, rest)
 	}
 	return fmt.Errorf("unknown command %q\n%s", cmd, usage)
 }
@@ -309,10 +356,14 @@ func rollback(ctx context.Context, e *env, cl pb.NodedClient, node, version stri
 	if _, err := cl.SetBootSlot(ctx, &pb.SetBootSlotRequest{Version: version, OneShot: true}); err != nil {
 		return err
 	}
-	return cycle(ctx, e, cl, node, "rollback", func(ctx context.Context) error {
+	if err := cycle(ctx, e, cl, node, "rollback", func(ctx context.Context) error {
 		_, err := cl.Reboot(ctx, &pb.RebootRequest{})
 		return err
-	})
+	}); err != nil {
+		return err
+	}
+	// the wait is built in (cycle); the health gate makes rollback usable as the abort path of a rollout
+	return health(ctx, node, cl)
 }
 
 // cycle drains, reboots through fn, waits for the agent to return with a smaller uptime, then uncordons.
@@ -423,4 +474,111 @@ func channel(ctx context.Context, cl pb.NodedClient, rest []string) error {
 		return err
 	}
 	return fmt.Errorf("channel <node> show|set <url>|reset")
+}
+
+func readSpecArg(fs *flag.FlagSet, args []string) (string, time.Duration, error) {
+	file := fs.String("f", "", "EdgeNodeConfig spec as JSON (a file, or - for stdin)")
+	ttl := fs.Duration("ttl", 0, "override lifetime (default 4h, max 168h)")
+	if err := fs.Parse(args); err != nil {
+		return "", 0, err
+	}
+	if *file == "" {
+		return "", 0, fmt.Errorf("-f <spec.json> is required")
+	}
+	var b []byte
+	var err error
+	if *file == "-" {
+		b, err = io.ReadAll(os.Stdin)
+	} else {
+		b, err = os.ReadFile(*file)
+	}
+	return string(b), *ttl, err
+}
+
+func configCmd(ctx context.Context, cl pb.NodedClient, rest []string) error {
+	const u = "config <node> show|validate -f F|diff -f F|set -f F [--ttl 4h]|clear"
+	if len(rest) == 0 {
+		return fmt.Errorf(u)
+	}
+	fs := flag.NewFlagSet("config "+rest[0], flag.ContinueOnError)
+	switch rest[0] {
+	case "show":
+		st, err := cl.GetConfig(ctx, &pb.GetConfigRequest{})
+		if err != nil {
+			return err
+		}
+		fmt.Printf("applied hash %q\napplied      %s\nstaged       %s\noverride     %s (expires %s)\n\n%s", st.AppliedHash, orDash(st.AppliedJson), orDash(st.StagedJson), orDash(st.OverrideJson), orDash(st.OverrideExpires), st.Rendered)
+		return nil
+	case "validate", "diff":
+		js, _, err := readSpecArg(fs, rest[1:])
+		if err != nil {
+			return err
+		}
+		v, err := cl.ValidateConfig(ctx, &pb.ValidateConfigRequest{SpecJson: js})
+		if err != nil {
+			return err
+		}
+		if !v.Valid {
+			return fmt.Errorf("invalid: %s", v.Error)
+		}
+		if rest[0] == "validate" {
+			fmt.Printf("valid (hash %s)\n%s", v.Hash, v.Rendered)
+			return nil
+		}
+		cur, err := cl.GetConfig(ctx, &pb.GetConfigRequest{})
+		if err != nil {
+			return err
+		}
+		fmt.Print(lineDiff(cur.Rendered, v.Rendered))
+		return nil
+	case "set":
+		js, ttl, err := readSpecArg(fs, rest[1:])
+		if err != nil {
+			return err
+		}
+		r, err := cl.SetConfigOverride(ctx, &pb.SetConfigOverrideRequest{SpecJson: js, TtlSeconds: uint32(ttl / time.Second)})
+		if err != nil {
+			return err
+		}
+		fmt.Printf("override set, expires %s (it beats the cluster config until then; the node applies it within a minute)\n", r.Expires)
+		return nil
+	case "clear":
+		_, err := cl.ClearConfigOverride(ctx, &pb.ClearConfigOverrideRequest{})
+		return err
+	}
+	return fmt.Errorf(u)
+}
+
+func orDash(s string) string {
+	if s == "" {
+		return "-"
+	}
+	return s
+}
+
+// lineDiff prints lines only in a with "-" and lines only in b with "+" (the rendered files are short and order-stable).
+func lineDiff(a, b string) string {
+	set := func(s string) map[string]bool {
+		m := map[string]bool{}
+		for _, l := range strings.Split(s, "\n") {
+			m[l] = true
+		}
+		return m
+	}
+	sa, sb := set(a), set(b)
+	var out strings.Builder
+	for _, l := range strings.Split(a, "\n") {
+		if l != "" && !sb[l] {
+			out.WriteString("- " + l + "\n")
+		}
+	}
+	for _, l := range strings.Split(b, "\n") {
+		if l != "" && !sa[l] {
+			out.WriteString("+ " + l + "\n")
+		}
+	}
+	if out.Len() == 0 {
+		return "no difference\n"
+	}
+	return out.String()
 }

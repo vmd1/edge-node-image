@@ -1,0 +1,2 @@
+# no raw memory or port access from userspace; lockdown=integrity and STRICT_DEVMEM already restrict it, this removes the nodes
+KERNEL=="mem|kmem|port", ACTION=="add", RUN+="/usr/bin/rm -f /dev/%k"

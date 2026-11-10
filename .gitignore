@@ -12,3 +12,5 @@ mkosi.cache/
 build/
 mkosi.profiles/debug/mkosi.extra/usr/lib/systemd/import-pubring.gpg
 mkosi.profiles/trial/mkosi.extra/usr/lib/systemd/import-pubring.gpg
+__pycache__/
+support-*.tar.gz.age

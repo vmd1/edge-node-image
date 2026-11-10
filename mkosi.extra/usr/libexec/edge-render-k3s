@@ -1,8 +1,9 @@
-#!/bin/bash
+#!/bin/sh
 # Write /var/lib/edge/k3s-config.yaml from the bootstrap settings. Refuses (no file, so k3s-agent does not start) if the
 # node has no external IP yet, as agreed in the plan.
-set -euo pipefail
+set -eu
 V=/var/lib/edge
+# shellcheck source=/dev/null
 set -a; . "$V/bootstrap.env"; set +a
 ext=$(cat "$V/external-ip" 2>/dev/null || true)
 [ -n "$ext" ] || { echo "render-k3s: no external IP yet, not writing a k3s config" >&2; rm -f "$V/k3s-config.yaml"; exit 1; }

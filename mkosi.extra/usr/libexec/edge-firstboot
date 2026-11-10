@@ -10,7 +10,7 @@ env_file="$V/bootstrap.env"
 # With no IMDS (local VM tests) an existing bootstrap.env is used as is.
 imds=""
 tries=3; [ -s "$env_file" ] || tries=30
-for i in $(seq 1 $tries); do
+for _ in $(seq 1 $tries); do
   imds=$(curl -sf --connect-timeout 2 --max-time 5 -H "Authorization: Bearer Oracle" http://169.254.169.254/opc/v2/instance/ || true)
   [ -n "$imds" ] && break
   sleep 2
@@ -27,8 +27,10 @@ elif [ ! -s "$env_file" ]; then
   echo "firstboot: no metadata and no bootstrap.env; nothing to configure" >&2; exit 1
 fi
 
+set -a
 # shellcheck source=/dev/null
-set -a; . "$env_file"; set +a
+. "$env_file"
+set +a
 umask 077
 : "${NODE_NAME:?NODE_NAME missing from bootstrap}"
 printf '%s' "$NODE_NAME" | grep -Eq '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$' || { echo "firstboot: invalid node name" >&2; exit 1; }
@@ -42,7 +44,7 @@ if [ -n "${K3S_TOKEN:-}" ]; then printf '%s\n' "$K3S_TOKEN" > "$V/k3s-token"; ch
 
 # Tailscale: join once. The auth key is removed from disk afterwards.
 if [ "${EDGE_SKIP_TAILSCALE:-}" != 1 ]; then
-  for i in $(seq 1 30); do tailscale status >/dev/null 2>&1 && break || [ $? -eq 1 ] && break; sleep 1; done
+  for _ in $(seq 1 30); do tailscale status >/dev/null 2>&1 && break || [ $? -eq 1 ] && break; sleep 1; done
   if ! tailscale ip -4 >/dev/null 2>&1; then
     [ -n "${TAILSCALE_AUTHKEY:-}" ] || { echo "firstboot: not on the tailnet and no TAILSCALE_AUTHKEY" >&2; exit 1; }
     tailscale up --authkey="$TAILSCALE_AUTHKEY" --hostname="$NODE_NAME" --accept-dns=false --accept-routes=false

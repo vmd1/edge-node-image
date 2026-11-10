@@ -16,6 +16,7 @@ if [ ! -f .vm/disk.raw ]; then
   truncate -s "${EDGE_DISK_SIZE:-8G}" .vm/disk.raw
 fi
 [ -f .vm/vars.fd ] || cp "$q/edk2-arm-vars.fd" .vm/vars.fd
+# shellcheck disable=SC2054 # qemu option values are comma separated
 args=(-machine virt -accel hvf -cpu host -smp 2 -m 1024
   -drive if=pflash,format=raw,readonly=on,file="$q/edk2-aarch64-code.fd"
   -drive if=pflash,format=raw,file=.vm/vars.fd

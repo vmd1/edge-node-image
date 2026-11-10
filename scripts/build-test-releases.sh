@@ -12,4 +12,4 @@ for spec in "1.0.0:debug" "2.0.0:debug" "3.0.0:debug,bad"; do
   GNUPGHOME="$PWD/.vm/gnupg" scripts/make-release.sh ".vm/builds/$v" "$v" ".vm/releases/$v" | tail -1
 done
 go build -o .vm/bin/nodectl ./cmd/nodectl
-echo done
+echo "done"

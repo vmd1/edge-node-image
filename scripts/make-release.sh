@@ -9,7 +9,8 @@
 set -euo pipefail
 out="${1:?mkosi output dir}"; ver="${2:?version}"; rel="${3:?release dir}"; key="${4:-edge-test}"
 id=edge-node
-root=$(ls "$out"/$id.root-*.raw | grep -v verity | head -1)
+root=""
+for f in "$out"/$id.root-*.raw; do case "$f" in *verity*) ;; *) root=$f; break;; esac; done
 verity=$(ls "$out"/$id.root-*-verity.raw | head -1)
 uki="$out/$id.efi"
 hash=$(grep -a -o 'roothash=[0-9a-f]\{64\}' "$uki" | head -1 | cut -d= -f2)

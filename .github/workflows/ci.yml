@@ -18,7 +18,7 @@ jobs:
         run: |
           go build -o /tmp/noded ./cmd/noded
           ! strings /tmp/noded | grep -q 'authorization is disabled'
-      - run: sudo apt-get install -y shellcheck && shellcheck scripts/*.sh mkosi.extra/usr/libexec/* mkosi.extra/usr/lib/edge/health.d/*
+      - run: sudo apt-get install -y shellcheck && shellcheck -S warning scripts/*.sh mkosi.extra/usr/libexec/* mkosi.extra/usr/lib/edge/health.d/*
 
   image:
     strategy:

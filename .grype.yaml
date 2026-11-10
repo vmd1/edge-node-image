@@ -16,3 +16,5 @@ ignore:
   # so k3s moves only together with the cluster. revisit with the next cluster upgrade.
   - package: {name: stdlib, version: go1.25.9, type: go-module}
     reason: "inside the pinned k3s binary; upgrade k3s together with the control plane"
+  - package: {name: golang.org/x/net, version: v0.47.0, type: go-module}
+    reason: "inside the pinned k3s binary (noded, nodectl and tailscaled are on v0.60.0); upgrade k3s together with the control plane"

@@ -36,6 +36,6 @@ jobs:
         run: |
           tag="stable-${{ inputs.arch }}"
           cd cand
-          gh release view "$tag" >/dev/null 2>&1 || gh release create "$tag" --title "$tag" --notes "Rolling channel followed by nodes. Do not download by hand." --prerelease
-          gh release upload "$tag" --clobber $(ls | grep -v -E '^(SHA256SUMS|pub.gpg)') SHA256SUMS SHA256SUMS.gpg
-          for a in $(gh release view "$tag" --json assets --jq '.assets[].name'); do [ -e "$a" ] || gh release delete-asset "$tag" "$a" --yes; done
+          gh release view "$tag" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 || gh release create "$tag" -R "$GITHUB_REPOSITORY" --title "$tag" --notes "Rolling channel followed by nodes. Do not download by hand." --prerelease
+          gh release upload "$tag" -R "$GITHUB_REPOSITORY" --clobber $(ls | grep -v -E '^(SHA256SUMS|pub.gpg)') SHA256SUMS SHA256SUMS.gpg
+          for a in $(gh release view "$tag" -R "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name'); do [ -e "$a" ] || gh release delete-asset "$tag" -R "$GITHUB_REPOSITORY" "$a" --yes; done

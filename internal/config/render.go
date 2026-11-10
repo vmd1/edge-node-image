@@ -13,7 +13,7 @@ type Rendered map[string]string
 // suffix append to the base file, so the kubelet flags below come after (and so win over) the image defaults.
 const (
 	K3sDropin    = "/var/lib/edge/k3s-config.yaml.d/50-edge-node-config.yaml"
-	SysctlDropin = "/run/sysctl.d/60-edge-node-config.conf"
+	SysctlDropin = "/run/sysctl.d/99-edge-node-config.conf"
 	TimesyncConf = "/run/systemd/timesyncd.conf.d/60-edge-node-config.conf"
 	LockdownFlag = "/var/lib/edge/config/module-lockdown"
 )

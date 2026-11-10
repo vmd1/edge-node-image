@@ -33,11 +33,23 @@ type Rule struct {
 // Baseline is what a node with no FirewallRule objects allows from anywhere.
 var Baseline = []Port{{53, "UDP"}, {53, "TCP"}, {80, "TCP"}, {443, "TCP"}, {41641, "UDP"}}
 
+var bootstrapEnv = "/var/lib/edge/bootstrap.env"
+
 // extraFromEnv reads EDGE_FIREWALL_EXTRA_PORTS ("7777/tcp,8080/udp"): additional baseline ports for environments where noded is
 // not reached over Tailscale (the KVM tests). Unset in production; invalid entries are ignored.
 func extraFromEnv() []Port {
 	var out []Port
-	for _, f := range strings.Split(os.Getenv("EDGE_FIREWALL_EXTRA_PORTS"), ",") {
+	v := os.Getenv("EDGE_FIREWALL_EXTRA_PORTS")
+	if v == "" { // also honoured from bootstrap.env so it survives reboots in the test VMs
+		if b, err := os.ReadFile(bootstrapEnv); err == nil {
+			for _, l := range strings.Split(string(b), "\n") {
+				if rest, ok := strings.CutPrefix(strings.TrimSpace(l), "EDGE_FIREWALL_EXTRA_PORTS="); ok {
+					v = strings.Trim(rest, `"'`)
+				}
+			}
+		}
+	}
+	for _, f := range strings.Split(v, ",") {
 		n, proto, ok := strings.Cut(strings.TrimSpace(f), "/")
 		p, err := strconv.Atoi(n)
 		if !ok || err != nil || p < 1 || p > 65535 {

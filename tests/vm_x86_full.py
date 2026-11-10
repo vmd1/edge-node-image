@@ -57,7 +57,7 @@ try:
     vm.sh("mkdir -p /var/lib/edge && umask 077 && cat > /var/lib/edge/bootstrap.env <<'EOF'\n"
           f"NODE_NAME={NODE}\nK3S_TOKEN=testtoken\nK3S_SERVER_URL=https://10.0.2.2:6443\nEDGE_SKIP_TAILSCALE=1\nNODE_IP=10.0.2.15\nFLANNEL_IFACE=eth0\nEOF\ntrue")
     # noded is reached over a forwarded port here, so the host firewall baseline must allow it (production uses tailscale0)
-    vm.sh("mkdir -p /run/systemd/system/noded.service.d && printf '[Service]\\nEnvironment=EDGE_FIREWALL_EXTRA_PORTS=7777/tcp\\n' > /run/systemd/system/noded.service.d/test.conf && systemctl daemon-reload && systemctl restart noded")
+    vm.sh("echo EDGE_FIREWALL_EXTRA_PORTS=7777/tcp >> /var/lib/edge/bootstrap.env && systemctl restart noded")
     vm.sh("stty echo")
     out = sh("systemctl restart edge-firstboot; journalctl -u edge-firstboot --no-pager -n 4 | cut -c1-150 | sed 's/tskey-[A-Za-z0-9-]*/<key>/g'", 300)
     check("first boot done (k3s config rendered)", "firstboot: done" in out, out)
@@ -90,7 +90,7 @@ try:
     rc, out = ctl("dmesg", "x"); check("dmesg", rc == 0 and len(out) > 100, out)
     rc, out = ctl("events", "x", "-n", "20"); check("events", rc == 0 and len(out) > 20, out)
     rc, out = ctl("health", "x"); check("health", "ok=true" in out, out)
-    rc, out = ctl("support", "x", "-o", "/tmp"); check("support bundle written", rc == 0 and "support-" in out, out)
+    rc, out = ctl("support", "-o", "/tmp", "x"); check("support bundle written", rc == 0 and "support-" in out, out)
     p = subprocess.run(f"{NODECTL} --no-kube --addr 127.0.0.1:7777 pcap x --seconds 4 --proto tcp > /tmp/edge.pcap; xxd -l 4 -p /tmp/edge.pcap; wc -c < /tmp/edge.pcap", shell=True, capture_output=True, text=True, timeout=60)
     check("pcap writes a valid pcap header", p.stdout.startswith("d4c3b2a1"), p.stdout + p.stderr)
     rc, out = ctl("audit", "x"); check("audit log has the calls above", "audit id=" in out and "method=Status" in out, out[-300:])
@@ -107,11 +107,14 @@ spec:
 """)
     check("EdgeNodeConfig t1 created", rc == 0, out)
     check("config-state applied within 3 minutes", wait(lambda: ann("config-state") == "applied" and ann("config-hash"), 240, 10), ann("config-error"))
-    rc, out = ctl("config", "x", "show"); print(out[:600])
-    check("config show has the rendered drop-in", "max-pods=77" in out and "vm.swappiness = 77" in out, out)
+    out = ""
+    def shown():
+        global out
+        out = ctl("config", "x", "show")[1]; return "max-pods=77" in out and "vm.swappiness = 77" in out
+    check("config show has the rendered drop-in", wait(shown, 120, 10), out)
     check("kubelet capacity pods == 77 after the restart", wait(lambda: kc("get", "node", NODE, "-o", "jsonpath={.status.capacity.pods}")[1] == "77", 180, 10), kc("get", "node", NODE, "-o", "jsonpath={.status.capacity.pods}")[1] + " (was " + cap0 + ")")
     check("node label from the config", wait(lambda: kc("get", "node", NODE, "--show-labels")[1].find("team=edge-test") >= 0, 120, 10), "")
-    check("sysctl applied", sh("sysctl -n vm.swappiness").strip().splitlines()[-1] == "77", sh("sysctl -n vm.swappiness"))
+    check("sysctl applied (beats the image's 90-edge.conf)", wait(lambda: sh("sysctl -n vm.swappiness").strip().splitlines()[-1] == "77", 120, 10), sh("sysctl -n vm.swappiness"))
     check("node Ready after the config restart", wait(lambda: " Ready" in kc("get", "node", NODE, "--no-headers")[1], 200), "")
 
     kapply("""apiVersion: edge.vmd1.dev/v1alpha1
@@ -171,7 +174,7 @@ metadata: {name: roles}
 spec: {apiRoles: enforce}
 """)
     check("apiRoles enforce takes effect", wait(lambda: "PermissionDenied" in ctl("status", "x")[1] or "denied" in ctl("status", "x")[1].lower(), 240, 10), ctl("status", "x")[1])
-    rc, out = ctl("reboot", "x"); check("a caller without a grant is refused (no reboot)", rc != 0 and "role" in out.lower(), out)
+    rc, out = ctl("--yes", "reboot", "x"); check("a caller without a grant is refused (no reboot)", rc != 0 and "role" in out.lower(), out)
     kc("delete", "edgenodeconfig", "roles")
     check("access returns when the object is removed (audit mode)", wait(lambda: ctl("status", "x")[0] == 0, 300, 10), ctl("status", "x")[1])
 

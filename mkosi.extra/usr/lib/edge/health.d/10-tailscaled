@@ -1,2 +1,4 @@
 #!/bin/sh
+# Test nodes join without Tailscale (EDGE_SKIP_TAILSCALE=1 in bootstrap.env, same switch as edge-firstboot).
+grep -qx 'EDGE_SKIP_TAILSCALE=1' /var/lib/edge/bootstrap.env 2>/dev/null && exit 0
 /usr/local/bin/tailscale ip -4 >/dev/null 2>&1

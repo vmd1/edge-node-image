@@ -1,6 +1,13 @@
 # Testing log
 
-Last updated at the end of the first long session. **Local VM = arm64 QEMU with HVF on an Apple Silicon Mac; nothing here has
+> **Note (2026-11-10): this log is from the first session and has not been rewritten per item.** Since then the image was built for
+> x86-64, the x86 VM tests in `tests/vm_x86_*` were added and run on a KVM host, all six OCI nodes were replaced with it (0.2.0, 2026-10-29/30),
+> the release workflow built and signed `v0.3.0-rc1` to the candidate channel and all six nodes now run it (2026-11-10). So the "not run"
+> lists below (x86, OCI, CI workflows, first-boot provisioning, k3s and Tailscale join) are out of date as a whole; individual items
+> (health gate with a bad image, power loss during staging, oomd under real pressure, A/B fallback on OCI hardware) were not re-verified
+> in this pass and should be treated as unverified until a test here says otherwise.
+
+Original header: **Local VM = arm64 QEMU with HVF on an Apple Silicon Mac; at the time nothing had
 run on OCI or on x86.** "Real run" means the output was observed; "not run" means exactly that.
 
 ## Passed (real runs)
